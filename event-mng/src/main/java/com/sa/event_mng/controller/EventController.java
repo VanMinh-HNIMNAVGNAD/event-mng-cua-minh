@@ -39,14 +39,23 @@ public class EventController {
         }
 
         @GetMapping
-        @Operation(summary = "Lấy danh sách sự kiện đã đăng")
-        public ApiResponse<Page<EventResponse>> getAllPublished(@RequestParam(defaultValue = "1") int page,
-                        @RequestParam(defaultValue = "10") int size) {
+        @Operation(summary = "Lấy danh sách sự kiện đã đăng (Kèm lọc nâng cao)")
+        public ApiResponse<Page<EventResponse>> getAllPublished(
+                        @RequestParam(defaultValue = "1") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) String keyword,
+                        @RequestParam(required = false) String province,
+                        @RequestParam(required = false) Long categoryId,
+                        @RequestParam(required = false) Double minPrice,
+                        @RequestParam(required = false) Double maxPrice,
+                        @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime startDate,
+                        @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime endDate
+        ) {
                 PageRequest pageRequest = PageRequest.of(
                                 page - 1, size,
                                 Sort.by("createdAt").descending());
                 return ApiResponse.<Page<EventResponse>>builder()
-                                .result(eventService.getAllPublished(pageRequest))
+                                .result(eventService.getAllPublished(keyword, province, categoryId, minPrice, maxPrice, startDate, endDate, pageRequest))
                                 .build();
         }
 

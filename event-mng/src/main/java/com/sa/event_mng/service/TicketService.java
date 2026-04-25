@@ -38,7 +38,7 @@ public class TicketService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ORGANIZER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('ORGANIZER') or hasAuthority('SCOPE_CHECK_IN')")
     public TicketResponse checkIn(String ticketCode) {
         Ticket ticket = ticketRepository.findByTicketCode(ticketCode)
                 .orElseThrow(() -> new AppException(ErrorCode.TICKET_INVALID));

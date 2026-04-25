@@ -13,4 +13,6 @@ import java.util.List;
 public class EventRevenueStatsAdminResponse {
     private BigDecimal totalRevenue;
     private List<MonthlyRevenueResponse> monthlyRevenues;
+    private List<com.sa.event_mng.model.projection.ProvinceRevenueProjection> provinceRevenues;
+    private List<com.sa.event_mng.model.projection.VoucherStatsProjection> voucherStats;
 }

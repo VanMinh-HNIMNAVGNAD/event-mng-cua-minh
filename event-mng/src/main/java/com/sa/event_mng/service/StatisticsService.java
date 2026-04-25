@@ -114,6 +114,8 @@ public class StatisticsService {
         return EventRevenueStatsAdminResponse.builder()
                 .totalRevenue(totalStats != null ? totalStats.getTotalRevenue() : BigDecimal.ZERO)
                 .monthlyRevenues(monthlyList)
+                .provinceRevenues(statisticsRepository.findRevenueByProvince())
+                .voucherStats(statisticsRepository.findVoucherStats())
                 .build();
     }
 }

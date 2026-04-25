@@ -46,6 +46,12 @@ public class Order extends BaseEntity {
     @Column(name = "payment_status")
     private PaymentStatus paymentStatus;
 
+    @Column(name = "discount_amount", precision = 12, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "voucher_code")
+    private String voucherCode;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")
     private OrderStatus orderStatus;

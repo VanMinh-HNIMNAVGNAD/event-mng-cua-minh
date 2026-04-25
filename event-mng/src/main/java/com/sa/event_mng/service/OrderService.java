@@ -37,9 +37,11 @@ public class OrderService {
     TicketTypeRepository ticketTypeRepository;
     OrderMapper orderMapper;
     EmailService emailService;
+    VoucherService voucherService;
+    InvoiceService invoiceService;
 
     @Transactional
-    public OrderResponse checkout(PaymentMethod paymentMethod) {
+    public OrderResponse checkout(PaymentMethod paymentMethod, String voucherCode) {
         User user = getCurrentUser();
         Cart cart = cartRepository.findByCustomerId(user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.CART_EMPTY));
@@ -48,11 +50,11 @@ public class OrderService {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
 
-        return createOrderFromItems(user, cart.getItems(), paymentMethod, cart);
+        return createOrderFromItems(user, cart.getItems(), paymentMethod, cart, voucherCode);
     }
 
     @Transactional
-    public OrderResponse checkoutSelected(List<Long> itemIds, PaymentMethod paymentMethod) {
+    public OrderResponse checkoutSelected(List<Long> itemIds, PaymentMethod paymentMethod, String voucherCode) {
         User user = getCurrentUser();
         Cart cart = cartRepository.findByCustomerId(user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.CART_EMPTY));
@@ -65,22 +67,34 @@ public class OrderService {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
 
-        return createOrderFromItems(user, selectedItems, paymentMethod, cart);
+        return createOrderFromItems(user, selectedItems, paymentMethod, cart, voucherCode);
     }
 
-    private OrderResponse createOrderFromItems(User user, List<CartItem> items, PaymentMethod paymentMethod, Cart cart) {
-        // Tổng tiền khách phải trả (là tổng subtotal trong giỏ)
-        BigDecimal totalAmount = items.stream()
+    private OrderResponse createOrderFromItems(User user, List<CartItem> items, PaymentMethod paymentMethod, Cart cart, String voucherCode) {
+        // Tổng tiền gốc
+        BigDecimal subTotal = items.stream()
                 .map(CartItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Tính toán giảm giá nếu có voucher
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (voucherCode != null && !voucherCode.isBlank()) {
+            // Lấy eventId từ item đầu tiên (Giả định 1 đơn hàng thanh toán cho 1 sự kiện hoặc voucher toàn sàn)
+            Long eventId = items.get(0).getTicketType().getEvent().getId();
+            Double discount = voucherService.calculateDiscount(voucherCode, subTotal.doubleValue(), eventId);
+            discountAmount = BigDecimal.valueOf(discount);
+        }
+
+        // Tổng tiền thực tế khách phải trả
+        BigDecimal totalAmount = subTotal.subtract(discountAmount);
 
         // Phần trăm hoa hồng (25%)
         float platformFeeRate = 0.25f;
 
-        // Tiền admin nhận (Dựa trên tổng doanh thu)
+        // Tiền admin nhận (Dựa trên tổng tiền thực tế)
         BigDecimal serviceFee = totalAmount.multiply(BigDecimal.valueOf(platformFeeRate));
 
-        // Tiền BTC thực nhận sau khi trừ hoa hồng
+        // Tiền BTC thực nhận
         BigDecimal organizerAmount = totalAmount.subtract(serviceFee);
 
         // Validate trạng thái sự kiện
@@ -96,6 +110,8 @@ public class OrderService {
                 .serviceFee(serviceFee)
                 .platformFeeRate(platformFeeRate)
                 .totalAmount(totalAmount)
+                .discountAmount(discountAmount)
+                .voucherCode(voucherCode)
                 .paymentMethod(paymentMethod)
                 .paymentStatus(PaymentStatus.PENDING)
                 .orderStatus(OrderStatus.PENDING)
@@ -159,12 +175,24 @@ public class OrderService {
         }
         orderRepository.save(order);
 
+        // Đánh dấu voucher đã sử dụng if any
+        if (order.getVoucherCode() != null && !order.getVoucherCode().isBlank()) {
+            voucherService.applyVoucher(order.getVoucherCode());
+        }
+
         if (order.getCustomer().getEmail() != null) {
-            emailService.sendOrderConfirmation(
-                    order.getCustomer().getEmail(),
-                    order.getId().toString(),
-                    order.getTotalAmount()
-            );
+            try {
+                byte[] invoicePdf = invoiceService.generateInvoicePdf(order);
+                emailService.sendOrderConfirmationWithInvoice(
+                        order.getCustomer().getEmail(),
+                        order.getId().toString(),
+                        order.getTotalAmount(),
+                        invoicePdf
+                );
+            } catch (Exception e) {
+                // Log but don't failpayment if email fails
+                System.err.println("Failed to send invoice email: " + e.getMessage());
+            }
         }
     }
 

@@ -74,4 +74,25 @@ public class EmailService {
 
         mailSender.send(email);
     }
+
+    public void sendOrderConfirmationWithInvoice(String to, String orderId, java.math.BigDecimal total, byte[] pdfInvoice) {
+        try {
+            jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
+            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(to);
+            helper.setSubject("[Event Manager] Hóa đơn điện tử - E-Invoice #" + orderId);
+
+            String text = "Chào bạn,\n\nHệ thống gửi kèm hóa đơn điện tử cho đơn hàng #" + orderId + " của bạn.\nTổng cộng: " + String.format("%,.0f", total.doubleValue()) + "đ\n\nTrân trọng!";
+            helper.setText(text);
+
+            // Attach PDF
+            helper.addAttachment("Invoice-" + orderId + ".pdf", new org.springframework.core.io.ByteArrayResource(pdfInvoice));
+
+            mailSender.send(message);
+        } catch (jakarta.mail.MessagingException e) {
+            throw new RuntimeException("Error sending email with invoice", e);
+        }
+    }
 }

@@ -1,7 +1,6 @@
 package com.sa.identity.entity;
 
 import com.sa.common.entity.BaseEntity;
-import com.sa.identity.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,8 +32,13 @@ public class User extends BaseEntity {
 
     private String address;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    @ManyToMany
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_name")
+    )
+    private java.util.Set<Role> roles;
 
     private boolean enabled;
 

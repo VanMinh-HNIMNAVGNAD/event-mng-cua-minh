@@ -81,4 +81,23 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
     ORDER BY year DESC, month DESC
     """, nativeQuery = true)
     List<com.sa.event_mng.model.projection.MonthlyRevenueProjection> findMonthlyRevenueOrganizer(@Param("organizerId") Long organizerId);
+    @Query(value = """
+    SELECT e.province as province, SUM(o.service_fee) as revenue, COUNT(o.id) as orderCount
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN ticket_types tt ON oi.ticket_type_id = tt.id
+    JOIN events e ON tt.event_id = e.id
+    WHERE o.payment_status = 'PAID'
+    GROUP BY e.province
+    ORDER BY revenue DESC
+    """, nativeQuery = true)
+    List<com.sa.event_mng.model.projection.ProvinceRevenueProjection> findRevenueByProvince();
+    @Query(value = """
+    SELECT voucher_code as code, COUNT(id) as usageCount, SUM(discount_amount) as totalDiscount
+    FROM orders
+    WHERE voucher_code IS NOT NULL AND payment_status = 'PAID'
+    GROUP BY voucher_code
+    ORDER BY usageCount DESC
+    """, nativeQuery = true)
+    List<com.sa.event_mng.model.projection.VoucherStatsProjection> findVoucherStats();
 }
