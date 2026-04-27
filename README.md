@@ -2,7 +2,7 @@
 
 ## 1. Danh sách các Bảng và Thuộc tính
 
-### Module: Identity & Access Management (IAM)
+### Module: Identity
 *   **users**: Quản lý thông tin tài khoản người dùng (Admin, Organizer, Staff, Customer).
     *   `id` (PK): Long
     *   `username`: String (Unique)
@@ -27,7 +27,7 @@
     *   `id` (PK): String (JTI)
     *   `expiry_time`: Date
 
-### Module: Event Management
+### Module: Event
 *   **categories**: Danh mục sự kiện.
     *   `id` (PK): Long
     *   `name`: String
@@ -43,12 +43,10 @@
     *   `sale_start_date`, `sale_end_date`: Thời gian bán vé.
     *   `description`: TEXT (Mô tả chi tiết).
     *   `status`: Enum (PENDING, UPCOMING, OPENING, CLOSED, COMPLETED, CANCELLED).
-*   **event_images**: Slide ảnh mô tả (Tối đa 5 ảnh).
+*   **event_images**: Ảnh mô tả sự kiện.
     *   `id` (PK): Long
     *   `event_id` (FK)
     *   `image_url`: String
-
-### Module: Ticket & Inventory
 *   **ticket_types**: Cấu hình loại vé (VIP, Standard...).
     *   `id` (PK): Long
     *   `event_id` (FK)
@@ -58,7 +56,7 @@
     *   `remaining_quantity`: Integer (Theo dõi tồn kho).
     *   `description`: String
 
-### Module: Booking & Sales
+### Module: Ordering (Giỏ hàng & Đơn hàng)
 *   **carts**: Giỏ hàng tạm thời.
     *   `id` (PK): Long
     *   `customer_id` (FK): Mỗi customer có 1 giỏ hàng.
@@ -85,6 +83,8 @@
     *   `ticket_type_id` (FK)
     *   `quantity`: Integer
     *   `unit_price`: BigDecimal
+
+### Module: Ticketing (Vé điện tử)
 *   **tickets**: Vé điện tử (Digital Ticket) được sinh ra sau khi Order thành công.
     *   `id` (PK): Long
     *   `order_id` (FK)
@@ -106,6 +106,7 @@
     *   `quantity`: Integer
     *   `event_id` (FK): Null nếu là Voucher toàn sàn.
     *   `creator_id` (FK): Admin hoặc Organizer.
+
 
 ---
 
@@ -183,10 +184,16 @@ com.sa.event_mng.modules.[module_name]
 ## 4. Tình trạng dự án
 
 ### ĐÃ HOÀN THÀNH:
-*   **Module hóa**: 5 miền nghiệp vụ chính (identity, event, ordering, ticketing, marketing) đã được tách biệt hoàn toàn vào folder `modules`.
-*   **Shared Kernel**: Logic dùng chung Exception, Config, DTO và BaseEntity đã được đưa vào folder `shared`.
+*   **Module hóa thực tế**: Dự án đã được chia thành **5 module vật lý** chính xác theo cấu trúc DDD:
+    1.  `identity`: Quản lý định danh và bảo mật.
+    2.  `event`: Quản lý sự kiện (Bao gồm cả **Ticket & Inventory** - hạng vé và số lượng).
+    3.  `ordering`: Quản lý giỏ hàng và quy trình đặt hàng/thanh toán.
+    4.  `ticketing`: Quản lý vé điện tử sau thanh toán.
+    5.  `marketing`: Quản lý khuyến mãi và voucher.
+*   **Shared Kernel**: Đã quy hoạch xong folder `shared` cho Exception, Config, DTO và BaseEntity.
 
-### CHƯA LÀM:
-*   **Viết lại Seeders**: Hệ thống tạo dữ liệu mẫu đang tạm dừng (đang lười seed).
-*   **Dọn dẹp file cũ**: Các folder cũ ở root cần được xóa hẳn (Delete) để tránh nhầm lẫn.
-*   **Enums đặc thù**: Một số Enum vẫn đang nằm ở `model.enums`. Cần đưa về đúng domain module (VD: `EventStatus` về module `event`) để tăng tính đóng gói.
+### CHƯA LÀM / CẦN CẢI THIỆN:
+*   **Viết lại Seeders**: Hệ thống tạo dữ liệu mẫu (`faker`) đang tạm dừng (đang lười seed).
+*   **Dọn dẹp folder gốc**: Các folder cũ (`service`, `repository`...) ở root cần được xóa hẳn (Delete) để tránh nhầm lẫn.
+*   **Enums đặc thù**: Đưa các Enum từ `model.enums` về đúng domain module (VD: `EventStatus` về `event`) để tăng tính đóng gói.
+*   **File Storage**: Triển khai chính thức dịch vụ upload ảnh (Cloudinary) trong tầng shared.

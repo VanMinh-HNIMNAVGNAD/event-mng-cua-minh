@@ -43,7 +43,6 @@ public class ApplicationInitConfig {
                 .enabled(true)
                 .build();
                 
-        // Lấy Role ADMIN từ DB, nếu chưa có thì lưu mới
         Role adminRole = roleRepo.findById("ADMIN").orElseGet(() -> {
             return roleRepo.save(Role.builder()
                 .name("ADMIN")
