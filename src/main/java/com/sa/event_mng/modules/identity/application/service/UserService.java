@@ -17,6 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -27,12 +30,9 @@ public class UserService {
 
     @PreAuthorize("isAuthenticated()")
     public UserResponse getMyInfo() {
-        var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
-
+        String name = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(name)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
         return userMapper.toUserResponse(user);
     }
 
@@ -42,17 +42,31 @@ public class UserService {
         return userMapper.toUserResponse(user);
     }
 
+    // ===================== ADMIN: quản lý CUSTOMER và ORGANIZER =====================
+
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<UserResponse> getUsers(String search, PageRequest pageRequest) {
-        Page<User> userPage;
-        if (search == null || search.isBlank()) {
-            userPage = userRepository.findAll(pageRequest);
-        } else {
-            userPage = userRepository
-                    .findByUsernameContainingIgnoreCaseOrFullNameContainingIgnoreCase(
-                            search, search, pageRequest);
+    public Page<UserResponse> getUsersByRole(String role, String search, PageRequest pageRequest) {
+        // Admin chỉ được xem CUSTOMER và ORGANIZER, không thấy STAFF
+        String normalizedRole = role != null && !role.isBlank() ? role.toUpperCase() : null;
+        if (normalizedRole != null && !normalizedRole.equals("CUSTOMER") && !normalizedRole.equals("ORGANIZER")) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-        return userPage.map(userMapper::toUserResponse);
+        List<String> allowedRoles = normalizedRole != null
+                ? List.of(normalizedRole)
+                : List.of("CUSTOMER", "ORGANIZER");
+        return userRepository.findByRoleNamesAndSearch(allowedRoles, search != null ? search : "", pageRequest)
+                .map(userMapper::toUserResponse);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Long> getUserStats() {
+        long customerCount = userRepository.countByRoleName("CUSTOMER");
+        long organizerCount = userRepository.countByRoleName("ORGANIZER");
+        return Map.of(
+                "customers", customerCount,
+                "organizers", organizerCount,
+                "total", customerCount + organizerCount
+        );
     }
 
     @PreAuthorize("hasRole('ADMIN') or #username == authentication.name")
@@ -60,26 +74,18 @@ public class UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if (!user.isEnabled())
-            throw new AppException(ErrorCode.USER_NOT_EXISTED);
+        if (!user.isEnabled()) throw new AppException(ErrorCode.USER_NOT_EXISTED);
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmailAndEnabledTrue(request.getEmail())) {
+            if (userRepository.existsByEmailAndEnabledTrue(request.getEmail()))
                 throw new AppException(ErrorCode.EMAIL_EXISTED);
-            }
             user.setEmail(request.getEmail());
         }
-
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+        if (request.getPassword() != null && !request.getPassword().isBlank())
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
-
-        if (request.getFullName() != null)
-            user.setFullName(request.getFullName());
-        if (request.getPhone() != null)
-            user.setPhone(request.getPhone());
-        if (request.getAddress() != null)
-            user.setAddress(request.getAddress());
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -88,18 +94,62 @@ public class UserService {
     public String deleteUser(String username) {
         User user = userRepository.findByUsernameAndEnabledTrue(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        // Admin không được xóa STAFF (do Organizer quản lý)
+        boolean isStaff = user.getRoles().stream().anyMatch(r -> r.getName().equals("STAFF"));
+        if (isStaff) throw new AppException(ErrorCode.UNAUTHORIZED);
         user.setEnabled(false);
-        user.setVerificationToken("");
         userRepository.save(user);
-        return "deleted";
+        return "User disabled";
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     public String unlockUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        boolean isStaff = user.getRoles().stream().anyMatch(r -> r.getName().equals("STAFF"));
+        if (isStaff) throw new AppException(ErrorCode.UNAUTHORIZED);
         user.setEnabled(true);
         userRepository.save(user);
-        return "unlocked";
+        return "User unlocked";
+    }
+
+    // ===================== ORGANIZER: quản lý STAFF của mình =====================
+
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public Page<UserResponse> getMyStaff(String search, PageRequest pageRequest) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return userRepository.findByOrganizer_IdAndRoles_Name(organizer.getId(), "STAFF", pageRequest)
+                .map(userMapper::toUserResponse);
+    }
+
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public String disableMyStaff(String staffUsername) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User staff = userRepository.findByUsernameAndEnabledTrue(staffUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        // Chỉ được vô hiệu hóa Staff thuộc mình
+        if (staff.getOrganizer() == null || !staff.getOrganizer().getId().equals(organizer.getId()))
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        staff.setEnabled(false);
+        userRepository.save(staff);
+        return "Staff disabled";
+    }
+
+    @PreAuthorize("hasRole('ORGANIZER')")
+    public String enableMyStaff(String staffUsername) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User staff = userRepository.findByUsername(staffUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (staff.getOrganizer() == null || !staff.getOrganizer().getId().equals(organizer.getId()))
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        staff.setEnabled(true);
+        userRepository.save(staff);
+        return "Staff enabled";
     }
 }

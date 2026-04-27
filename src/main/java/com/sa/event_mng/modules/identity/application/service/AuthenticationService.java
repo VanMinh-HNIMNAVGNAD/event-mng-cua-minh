@@ -23,9 +23,13 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StreamUtils;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -136,9 +140,23 @@ public class AuthenticationService {
             user.setVerificationToken(null);
             userRepository.save(user);
 
-            return "Verification successful";
+            return loadHtmlTemplate("templates/verification-success.html")
+                    .replace("{{frontendUrl}}", frontendUrl);
         } catch (Exception e) {
-            return "Verification failed";
+            return loadHtmlTemplate("templates/verification-failure.html")
+                    .replace("{{frontendUrl}}", frontendUrl);
+        }
+    }
+
+    private String loadHtmlTemplate(String path) {
+        try {
+            ClassPathResource resource = new ClassPathResource(path);
+            try (InputStream is = resource.getInputStream()) {
+                return StreamUtils.copyToString(is, StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            log.error("Could not load HTML template: {}", path, e);
+            return "Action completed, but template could not be loaded.";
         }
     }
 
@@ -181,8 +199,14 @@ public class AuthenticationService {
             throw new AppException(ErrorCode.USERNAME_EXISTED);
         }
 
+        if (userRepository.existsByEmailAndEnabledTrue(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
+
         Role staffRole = roleRepository.findById("STAFF")
                 .orElseGet(() -> roleRepository.save(Role.builder().name("STAFF").description("Staff role for check-in").build()));
+
+        String verificationToken = UUID.randomUUID().toString();
 
         User staff = User.builder()
                 .username(request.getUsername())
@@ -190,13 +214,16 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .roles(Set.of(staffRole))
-                .enabled(true)
-                .organizer(organizer)
+                .enabled(false)                    // Chưa kích hoạt
+                .verificationToken(verificationToken)
+                .organizer(organizer)              // Gắn với Organizer tạo ra
                 .build();
 
         userRepository.save(staff);
-        return "Staff account created successfully";
+        emailService.sendVerificationEmail(staff.getEmail(), verificationToken);
+        return "Staff account created. Please ask the staff member to verify their email.";
     }
+
 
     public void logout(LogoutRequest request) throws JOSEException, ParseException {
         try {

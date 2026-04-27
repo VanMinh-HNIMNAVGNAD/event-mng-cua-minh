@@ -14,6 +14,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -21,59 +23,80 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
-        private final UserService userService;
+    private final UserService userService;
 
-        @Operation(summary = "Lấy thông tin của chính mình", description = "Lấy thông tin hồ sơ của người dùng hiện đang đăng nhập")
-        @GetMapping("/my-info")
-        public ApiResponse<UserResponse> getMyInfo() {
-                return ApiResponse.<UserResponse>builder()
-                                .result(userService.getMyInfo())
-                                .build();
-        }
+    // ===================== CHUNG =====================
 
-        @Operation(summary = "Lấy tất cả người dùng", description = "Lấy danh sách tất cả các người dùng đang hoạt động (Chỉ ADMIN)")
-        @GetMapping
-        public ApiResponse<Page<UserResponse>> getUsers(
-                        @RequestParam(defaultValue = "1") int page,
-                        @RequestParam(defaultValue = "10") int size,
-                        @RequestParam(defaultValue = "") String search) {
-                PageRequest pageRequest = PageRequest.of(
-                                page - 1, size, Sort.by("createdAt").descending());
-                return ApiResponse.<Page<UserResponse>>builder()
-                                .result(userService.getUsers(search, pageRequest))
-                                .build();
-        }
+    @Operation(summary = "Lấy thông tin của chính mình")
+    @GetMapping("/my-info")
+    public ApiResponse<UserResponse> getMyInfo() {
+        return ApiResponse.<UserResponse>builder().result(userService.getMyInfo()).build();
+    }
 
-        @Operation(summary = "Lấy người dùng theo Username", description = "Lấy thông tin cụ thể của người dùng theo username")
-        @GetMapping("/{username}")
-        public ApiResponse<UserResponse> getUser(@PathVariable String username) {
-                return ApiResponse.<UserResponse>builder()
-                                .result(userService.getUserByUsername(username))
-                                .build();
-        }
+    @Operation(summary = "Cập nhật hồ sơ cá nhân")
+    @PutMapping("/{username}")
+    public ApiResponse<UserResponse> updateUser(@PathVariable String username,
+            @RequestBody @Valid UserUpdateRequest request) {
+        return ApiResponse.<UserResponse>builder().result(userService.updateUser(username, request)).build();
+    }
 
-        @Operation(summary = "Cập nhật người dùng", description = "Cập nhật thông tin hồ sơ của một người dùng cụ thể")
-        @PutMapping("/{username}")
-        public ApiResponse<UserResponse> updateUser(@PathVariable String username,
-                        @RequestBody @Valid UserUpdateRequest request) {
-                return ApiResponse.<UserResponse>builder()
-                                .result(userService.updateUser(username, request))
-                                .build();
-        }
+    // ===================== ADMIN: quản lý CUSTOMER & ORGANIZER =====================
 
-        @Operation(summary = "Xóa người dùng", description = "Vô hiệu hóa tài khoản người dùng theo username(ADMIN)")
-        @DeleteMapping("/{username}")
-        public ApiResponse<String> deleteUser(@PathVariable String username) {
-                return ApiResponse.<String>builder()
-                                .result(userService.deleteUser(username))
-                                .build();
-        }
+    @Operation(summary = "[ADMIN] Lấy danh sách Customer hoặc Organizer",
+               description = "Tham số role: CUSTOMER hoặc ORGANIZER. Để trống = lấy cả hai. Không trả về STAFF.")
+    @GetMapping("/admin")
+    public ApiResponse<Page<UserResponse>> getUsersByRole(
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        return ApiResponse.<Page<UserResponse>>builder()
+                .result(userService.getUsersByRole(role, search, pageRequest))
+                .build();
+    }
 
-        @Operation(summary = "Mở khóa người dùng", description = "Mở khóa tài khoản người dùng theo username(ADMIN)")
-        @PatchMapping("/{username}/unlock")
-        public ApiResponse<String> unlockUser(@PathVariable String username) {
-                return ApiResponse.<String>builder()
-                                .result(userService.unlockUser(username))
-                                .build();
-        }
+    @Operation(summary = "[ADMIN] Thống kê số lượng Customer và Organizer")
+    @GetMapping("/admin/stats")
+    public ApiResponse<Map<String, Long>> getUserStats() {
+        return ApiResponse.<Map<String, Long>>builder().result(userService.getUserStats()).build();
+    }
+
+    @Operation(summary = "[ADMIN] Vô hiệu hóa tài khoản Customer/Organizer")
+    @DeleteMapping("/admin/{username}")
+    public ApiResponse<String> deleteUser(@PathVariable String username) {
+        return ApiResponse.<String>builder().result(userService.deleteUser(username)).build();
+    }
+
+    @Operation(summary = "[ADMIN] Mở khóa tài khoản Customer/Organizer")
+    @PatchMapping("/admin/{username}/unlock")
+    public ApiResponse<String> unlockUser(@PathVariable String username) {
+        return ApiResponse.<String>builder().result(userService.unlockUser(username)).build();
+    }
+
+    // ===================== ORGANIZER: quản lý STAFF của mình =====================
+
+    @Operation(summary = "[ORGANIZER] Xem danh sách Staff của mình")
+    @GetMapping("/organizer/my-staff")
+    public ApiResponse<Page<UserResponse>> getMyStaff(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        return ApiResponse.<Page<UserResponse>>builder()
+                .result(userService.getMyStaff(search, pageRequest))
+                .build();
+    }
+
+    @Operation(summary = "[ORGANIZER] Vô hiệu hóa Staff của mình")
+    @DeleteMapping("/organizer/staff/{username}")
+    public ApiResponse<String> disableMyStaff(@PathVariable String username) {
+        return ApiResponse.<String>builder().result(userService.disableMyStaff(username)).build();
+    }
+
+    @Operation(summary = "[ORGANIZER] Kích hoạt lại Staff của mình")
+    @PatchMapping("/organizer/staff/{username}/enable")
+    public ApiResponse<String> enableMyStaff(@PathVariable String username) {
+        return ApiResponse.<String>builder().result(userService.enableMyStaff(username)).build();
+    }
 }
