@@ -288,11 +288,16 @@ public class EventService {
     }
 
     public List<BlogEventResponse> getBlogNews() {
-        List<EventStatus> activeStatuses = List.of(EventStatus.UPCOMING, EventStatus.OPENING);
         LocalDateTime now = LocalDateTime.now();
-        
-        List<Event> events = eventRepository.findByStatusIn(activeStatuses).stream()
+
+        // Lấy tất cả sự kiện đang hoạt động (loại trừ COMPLETED và CANCELLED)
+        // Đồng thời loại bỏ sự kiện đã kết thúc (endTime đã qua)
+        List<EventStatus> excludedStatuses = List.of(EventStatus.COMPLETED, EventStatus.CANCELLED);
+
+        List<Event> events = eventRepository.findAll().stream()
+                .filter(e -> !excludedStatuses.contains(e.getStatus()))
                 .filter(e -> e.getEndTime() == null || e.getEndTime().isAfter(now))
+                .sorted(Comparator.comparing(Event::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toList());
 
         return events.stream().map(e -> BlogEventResponse.builder()
@@ -304,8 +309,10 @@ public class EventService {
                 .endTime(e.getEndTime())
                 .saleStartDate(e.getSaleStartDate())
                 .saleEndDate(e.getSaleEndDate())
-                .descriptionStatus(e.getDescription() != null && !e.getDescription().isBlank() ? "Mô tả: " + e.getDescription() : "")
-                .imageUrl(e.getImages() != null && !e.getImages().isEmpty() ? e.getImages().get(0).getImageUrl() : null)
+                .descriptionStatus(e.getDescription() != null && !e.getDescription().isBlank()
+                        ? "Mô tả: " + e.getDescription() : "")
+                .imageUrl(e.getImages() != null && !e.getImages().isEmpty()
+                        ? e.getImages().get(0).getImageUrl() : null)
                 .build()
         ).collect(Collectors.toList());
     }
