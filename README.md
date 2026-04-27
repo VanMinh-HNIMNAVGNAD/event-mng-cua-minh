@@ -1,4 +1,4 @@
-# Tài liệu Thiết kế Hệ thống Event Management (DDD)
+# Tài liệu - DDD
 
 ## 1. Danh sách các Bảng và Thuộc tính
 
