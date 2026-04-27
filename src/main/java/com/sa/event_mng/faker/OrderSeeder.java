@@ -1,110 +1,119 @@
-package com.sa.event_mng.faker;
+/* package com.sa.event_mng.faker;
 
+import com.github.javafaker.Faker;
+import com.sa.event_mng.model.entity.Event;
 import com.sa.event_mng.model.entity.Order;
+import com.sa.event_mng.model.entity.OrderItem;
+import com.sa.event_mng.model.entity.TicketType;
 import com.sa.event_mng.model.entity.User;
 import com.sa.event_mng.model.enums.OrderStatus;
 import com.sa.event_mng.model.enums.PaymentMethod;
-import com.sa.event_mng.model.enums.PaymentStatus;
+import com.sa.event_mng.repository.EventRepository;
 import com.sa.event_mng.repository.OrderRepository;
+import com.sa.event_mng.repository.TicketTypeRepository;
 import com.sa.event_mng.repository.UserRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 @Component
-public class OrderSeeder {
-    private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
-    private final Random random = new Random();
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class OrderSeeder implements CommandLineRunner {
 
-    public OrderSeeder(OrderRepository orderRepository, UserRepository userRepository) {
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
+    OrderRepository orderRepository;
+    UserRepository userRepository;
+    EventRepository eventRepository;
+    TicketTypeRepository ticketTypeRepository;
+
+    Faker faker = new Faker();
+    Random random = new Random();
+
+    @Override
+    public void run(String... args) throws Exception {
+        if (orderRepository.count() == 0) {
+            seedOrders();
+        }
     }
 
-    @SuppressWarnings("deprecation")
-    public void seed() {
-        if (orderRepository.count() > 0) return;
+    private void seedOrders() {
+        List<User> customers = userRepository.findAll().stream()
+                .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName().equals("CUSTOMER")))
+                .toList();
+        List<Event> events = eventRepository.findAll();
 
-        List<User> users = userRepository.findByRoles_Name("CUSTOMER");
-        if (users.isEmpty()) {
-            System.out.println("No users found. Seed users first.");
-            return;
+        for (User customer : customers) {
+            if (events.isEmpty()) break;
+
+            int numberOfOrders = random.nextInt(5) + 1;
+            for (int i = 0; i < numberOfOrders; i++) {
+                Event event = events.get(random.nextInt(events.size()));
+                if (!event.getIsOnline()) continue;
+
+                Order order = createRandomOrder(customer, event);
+                orderRepository.save(order);
+            }
         }
 
-        List<Order> orders = new ArrayList<>();
-
-        for (int i = 0; i < 1000; i++) {
-            User customer = users.get(random.nextInt(users.size()));
-
-            LocalDateTime orderDate = LocalDateTime.now()
-                    .minusDays(random.nextInt(30))
-                    .minusHours(random.nextInt(24));
-
-            PaymentMethod paymentMethod = randomPaymentMethod();
-            OrderStatus orderStatus = randomOrderStatus();
-            PaymentStatus paymentStatus = randomPaymentStatus(orderStatus);
-
-            BigDecimal organizerAmount = randomAmount();
-            float platformFeeRate = 0.25f;
-            BigDecimal serviceFee = organizerAmount.multiply(BigDecimal.valueOf(platformFeeRate))
-                    .setScale(2, BigDecimal.ROUND_HALF_UP);
-            BigDecimal totalAmount = organizerAmount.add(serviceFee);
-
-            Order order = new Order();
-            order.setCustomer(customer);
-            order.setOrganizerAmount(organizerAmount);
-            order.setPlatformFeeRate(platformFeeRate);
-            order.setServiceFee(serviceFee);
-            order.setTotalAmount(totalAmount);
-            order.setPaymentMethod(paymentMethod);
-            order.setPaymentStatus(paymentStatus);
-            order.setOrderStatus(orderStatus);
-            order.setOrderDate(orderDate);
-            order.setPaidAt(paymentStatus == PaymentStatus.PAID
-                    ? orderDate.plusMinutes(random.nextInt(120) + 1)
-                    : null);
-
-            orders.add(order);
-        }
-
-        orderRepository.saveAll(orders);
-        System.out.println("Seeded " + orders.size() + " orders");
+        System.out.println("Seeded Orders.");
     }
 
-    @SuppressWarnings("deprecation")
-    private BigDecimal randomAmount() {
-        double value = 50000 + (5000000 - 50000) * random.nextDouble();
-        return BigDecimal.valueOf(value).setScale(2, BigDecimal.ROUND_HALF_UP);
-    }
+    private Order createRandomOrder(User customer, Event event) {
+        Order order = new Order();
+        order.setCustomer(customer);
+        order.setStatus(OrderStatus.PAID);
+        order.setPaymentMethod(random.nextBoolean() ? PaymentMethod.BANK_TRANSFER : PaymentMethod.MOMO);
+        order.setOrderedAt(LocalDateTime.now().minusDays(random.nextInt(30)));
 
-    private PaymentMethod randomPaymentMethod() {
-        PaymentMethod[] methods = PaymentMethod.values();
-        return methods[random.nextInt(methods.length)];
-    }
+        List<TicketType> availableTypes = ticketTypeRepository.findAll().stream()
+                .filter(tt -> tt.getEvent().getId().equals(event.getId()))
+                .toList();
 
-    private OrderStatus randomOrderStatus() {
-        OrderStatus[] statuses = OrderStatus.values();
-        return statuses[random.nextInt(statuses.length)];
-    }
+        if (availableTypes.isEmpty()) return null;
 
-    private PaymentStatus randomPaymentStatus(OrderStatus orderStatus) {
+        List<OrderItem> orderItems = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
-        if (orderStatus == OrderStatus.CANCELLED) {
-            PaymentStatus[] statuses = {PaymentStatus.FAILED, PaymentStatus.REFUNDED};
-            return statuses[random.nextInt(statuses.length)];
+        int itemCount = random.nextInt(3) + 1;
+        for (int j = 0; j < itemCount; j++) {
+            TicketType type = availableTypes.get(random.nextInt(availableTypes.size()));
+            if (type.getRemainingQuantity() <= 0) continue;
+
+            int quantity = random.nextInt(3) + 1;
+            if (quantity > type.getRemainingQuantity()) quantity = type.getRemainingQuantity();
+
+            BigDecimal itemTotal = type.getPrice().multiply(BigDecimal.valueOf(quantity));
+
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setTicketType(type);
+            item.setQuantity(quantity);
+            item.setPrice(type.getPrice());
+            item.setSubTotal(itemTotal);
+
+            orderItems.add(item);
+            totalAmount = totalAmount.add(itemTotal);
         }
-        if (orderStatus == OrderStatus.PENDING) {
-            PaymentStatus[] statuses = {PaymentStatus.FAILED, PaymentStatus.PENDING};
-            return statuses[random.nextInt(statuses.length)];
+
+        if (orderItems.isEmpty()) return null;
+
+        order.setItems(orderItems);
+        order.setTotalAmount(totalAmount);
+
+        // Update remaining quantities
+        for (OrderItem item : orderItems) {
+            TicketType type = item.getTicketType();
+            type.setRemainingQuantity(type.getRemainingQuantity() - item.getQuantity());
+            ticketTypeRepository.save(type);
         }
-        else { //OrderStatus.Comfirmed
-            return PaymentStatus.PAID;
-        }
+
+        return order;
     }
 }
-
+*/

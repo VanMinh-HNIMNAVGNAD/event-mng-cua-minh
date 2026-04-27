@@ -1,4 +1,4 @@
-package com.sa.event_mng.faker;
+/* package com.sa.event_mng.faker;
 
 import com.sa.event_mng.model.entity.Category;
 import com.sa.event_mng.repository.CategoryRepository;
@@ -42,4 +42,4 @@ public class CategorySeeder {
         category.setDescription(description);
         return category;
     }
-}
+} */

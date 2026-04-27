@@ -1,7 +1,7 @@
 package com.sa.event_mng.security_custom;
 
-import com.sa.event_mng.repository.EventRepository;
-import com.sa.event_mng.repository.UserRepository;
+import com.sa.event_mng.modules.event.domain.repository.EventRepository;
+import com.sa.event_mng.modules.identity.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;

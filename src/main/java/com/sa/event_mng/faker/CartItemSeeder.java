@@ -1,81 +1,69 @@
+/*
 package com.sa.event_mng.faker;
 
+import com.github.javafaker.Faker;
 import com.sa.event_mng.model.entity.Cart;
 import com.sa.event_mng.model.entity.CartItem;
 import com.sa.event_mng.model.entity.TicketType;
+import com.sa.event_mng.repository.CartItemRepository;
 import com.sa.event_mng.repository.CartRepository;
 import com.sa.event_mng.repository.TicketTypeRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 @Component
-public class CartItemSeeder {
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class CartItemSeeder implements CommandLineRunner {
 
-    private final CartRepository cartRepository;
-    private final TicketTypeRepository ticketTypeRepository;
-    private final Random random = new Random();
+    CartRepository cartRepository;
+    CartItemRepository cartItemRepository;
+    TicketTypeRepository ticketTypeRepository;
+    Faker faker = new Faker();
+    Random random = new Random();
 
-    public CartItemSeeder(CartRepository cartRepository, TicketTypeRepository ticketTypeRepository) {
-        this.cartRepository = cartRepository;
-        this.ticketTypeRepository = ticketTypeRepository;
+    @Override
+    public void run(String... args) throws Exception {
+        if (cartItemRepository.count() == 0) {
+            seedCartItems();
+        }
     }
 
-    public void seed() {
+    private void seedCartItems() {
         List<Cart> carts = cartRepository.findAll();
         List<TicketType> ticketTypes = ticketTypeRepository.findAll();
 
-        if (carts.isEmpty()) {
-            System.out.println("No carts found. Seed carts first.");
+        if (carts.isEmpty() || ticketTypes.isEmpty()) {
             return;
         }
-
-        if (ticketTypes.isEmpty()) {
-            System.out.println("No ticket types found. Seed ticket types first.");
-            return;
-        }
-
-        int createdCount = 0;
 
         for (Cart cart : carts) {
-            if (cart.getItems() != null && !cart.getItems().isEmpty()) {
-                continue;
+            int numberOfItems = random.nextInt(3) + 1; // Mỗi giỏ có từ 1 đến 3 loại vé
+
+            for (int i = 0; i < numberOfItems; i++) {
+                TicketType randomTicketType = ticketTypes.get(random.nextInt(ticketTypes.size()));
+                int quantity = random.nextInt(5) + 1;
+
+                CartItem item = CartItem.builder()
+                        .cart(cart)
+                        .ticketType(randomTicketType)
+                        .quantity(quantity)
+                        .unitPrice(randomTicketType.getPrice())
+                        .subtotal(randomTicketType.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                        .build();
+
+                cartItemRepository.save(item);
             }
-
-            int itemCount = random.nextInt(3) + 1;
-            List<CartItem> items = new ArrayList<>();
-
-            for (int i = 0; i < itemCount; i++) {
-                TicketType ticketType = ticketTypes.get(random.nextInt(ticketTypes.size()));
-                int quantity = Math.max(1, random.nextInt(4));
-
-                if (ticketType.getRemainingQuantity() == null || ticketType.getRemainingQuantity() <= 0) {
-                    continue;
-                }
-
-                quantity = Math.min(quantity, ticketType.getRemainingQuantity());
-
-                BigDecimal unitPrice = ticketType.getPrice();
-                BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-
-                CartItem item = new CartItem();
-                item.setCart(cart);
-                item.setTicketType(ticketType);
-                item.setQuantity(quantity);
-                item.setUnitPrice(unitPrice);
-                item.setSubtotal(subtotal);
-
-                items.add(item);
-                createdCount++;
-            }
-
-            cart.setItems(items);
         }
 
-        cartRepository.saveAll(carts);
-        System.out.println("Seeded " + createdCount + " cart items");
+        System.out.println("Seeded Cart Items.");
     }
 }
+*/

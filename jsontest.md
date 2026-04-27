@@ -1,5 +1,7 @@
 # Postman API Testing Guide & JSON Data
 
+# CŨ RỒI CHƯA UPDATE
+
 Sử dụng tài liệu này để kiểm thử hệ thống qua Postman. Tất cả các API trả về định dạng `ApiResponse`.
 
 **Base URL tổng quát:** `http://localhost:8080/event-mng`

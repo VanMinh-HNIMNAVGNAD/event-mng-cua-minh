@@ -1,8 +1,8 @@
 package com.sa.event_mng.task;
 
-import com.sa.event_mng.model.entity.Event;
-import com.sa.event_mng.model.enums.EventStatus;
-import com.sa.event_mng.repository.EventRepository;
+import com.sa.event_mng.modules.event.domain.model.Event;
+import com.sa.event_mng.modules.event.domain.model.EventStatus;
+import com.sa.event_mng.modules.event.domain.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
