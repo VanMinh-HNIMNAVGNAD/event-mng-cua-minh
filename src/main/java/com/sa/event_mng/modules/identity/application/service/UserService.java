@@ -1,10 +1,12 @@
 package com.sa.event_mng.modules.identity.application.service;
 
+import com.sa.event_mng.modules.identity.application.dto.request.UserCreateRequest;
 import com.sa.event_mng.modules.identity.application.dto.request.UserUpdateRequest;
 import com.sa.event_mng.modules.identity.application.dto.response.UserResponse;
 import com.sa.event_mng.shared.exception.AppException;
 import com.sa.event_mng.shared.exception.ErrorCode;
 import com.sa.event_mng.modules.identity.application.mapper.UserMapper;
+import com.sa.event_mng.modules.identity.domain.model.Role;
 import com.sa.event_mng.modules.identity.domain.model.User;
 import com.sa.event_mng.modules.identity.domain.repository.UserRepository;
 import lombok.AccessLevel;
@@ -17,8 +19,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +32,8 @@ public class UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    com.sa.event_mng.modules.identity.domain.repository.RoleRepository roleRepository;
+    com.sa.event_mng.shared.infrastructure.email.EmailService emailService;
 
     @PreAuthorize("isAuthenticated()")
     public UserResponse getMyInfo() {
@@ -125,13 +132,52 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('ORGANIZER')")
+    public String createStaff(UserCreateRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USERNAME_EXISTED);
+        }
+        if (userRepository.existsByEmailAndEnabledTrue(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
+
+        String token = UUID.randomUUID().toString();
+        
+        Role role = roleRepository.findById("STAFF")
+                .orElseGet(() -> roleRepository.save(Role.builder().name("STAFF").description("Staff role").build()));
+
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+
+        User staff = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .roles(roles)
+                .enabled(false)
+                .verificationToken(token)
+                .organizer(organizer)
+                .build();
+
+        userRepository.save(staff);
+        emailService.sendVerificationEmail(staff.getEmail(), token);
+        return "Staff created successfully. Please ask the staff to check their email for verification.";
+    }
+
+    @PreAuthorize("hasRole('ORGANIZER')")
     public String disableMyStaff(String staffUsername) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User organizer = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         User staff = userRepository.findByUsernameAndEnabledTrue(staffUsername)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        // Chỉ được vô hiệu hóa Staff thuộc mình
+        // Chỉ được vô hiệu hóa Staff of mình
         if (staff.getOrganizer() == null || !staff.getOrganizer().getId().equals(organizer.getId()))
             throw new AppException(ErrorCode.UNAUTHORIZED);
         staff.setEnabled(false);
