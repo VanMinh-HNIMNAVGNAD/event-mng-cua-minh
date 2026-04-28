@@ -12,6 +12,8 @@ public class CartItemResponse {
     private Long ticketTypeId;
     private String ticketTypeName;
     private String eventName;
+    private Long eventId;
+    private String eventImage;
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;

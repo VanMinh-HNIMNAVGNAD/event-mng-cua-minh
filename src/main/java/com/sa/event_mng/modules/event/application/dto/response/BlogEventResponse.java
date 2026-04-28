@@ -20,5 +20,6 @@ public class BlogEventResponse {
     LocalDateTime saleStartDate;
     LocalDateTime saleEndDate;
     String descriptionStatus;
+    String categoryName;
     String imageUrl;
 }

@@ -57,4 +57,30 @@ public class Event extends BaseEntity {
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TicketType> ticketTypes;
+
+    public EventStatus calculateStatus(LocalDateTime now) {
+        // Nếu bị hủy hoặc đã hoàn thành từ trước (thủ công) thì giữ nguyên nếu cần
+        // Nhưng ở đây ta focus vào auto-update cho các case active
+        
+        // quá end_time COMPLETED
+        if (endTime != null && now.isAfter(endTime)) {
+            return EventStatus.COMPLETED;
+        }
+
+        // quá thời gian bắt đầu sự kiện (mà chưa có endTime) -> COMPLETED
+        if (endTime == null && startTime != null && now.isAfter(startTime)) {
+            return EventStatus.COMPLETED;
+        }
+
+        // Kiểm tra thời gian bán vé
+        if (saleEndDate != null && now.isAfter(saleEndDate)) {
+            return EventStatus.CLOSED; // Hết hạn bán vé
+        }
+
+        if (saleStartDate != null && (now.isAfter(saleStartDate) || now.isEqual(saleStartDate))) {
+            return EventStatus.OPENING; // Đang trong thời gian bán vé
+        }
+
+        return EventStatus.UPCOMING;
+    }
 }

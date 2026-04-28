@@ -67,6 +67,7 @@ public class EventService {
                 .category(category)
                 .organizer(organizer)
                 .location(request.getLocation())
+                .province(request.getProvince())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .saleStartDate(request.getSaleStartDate())
@@ -135,6 +136,7 @@ public class EventService {
                 .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
         event.setName(request.getName());
         event.setLocation(request.getLocation());
+        event.setProvince(request.getProvince());
         event.setStartTime(request.getStartTime());
         event.setEndTime(request.getEndTime());
         event.setSaleStartDate(request.getSaleStartDate());
@@ -208,7 +210,12 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
         
-        event.setStatus(status);
+        // Nếu admin duyệt (chuyển sang UPCOMING/OPENING), ta tính toán lại trạng thái chuẩn theo thời gian hiện tại
+        if (status == EventStatus.UPCOMING || status == EventStatus.OPENING) {
+            event.setStatus(event.calculateStatus(LocalDateTime.now()));
+        } else {
+            event.setStatus(status);
+        }
         
         return eventMapper.toEventResponse(eventRepository.save(event));
     }
@@ -311,6 +318,7 @@ public class EventService {
                 .saleEndDate(e.getSaleEndDate())
                 .descriptionStatus(e.getDescription() != null && !e.getDescription().isBlank()
                         ? "Mô tả: " + e.getDescription() : "")
+                .categoryName(e.getCategory() != null ? e.getCategory().getName() : "")
                 .imageUrl(e.getImages() != null && !e.getImages().isEmpty()
                         ? e.getImages().get(0).getImageUrl() : null)
                 .build()

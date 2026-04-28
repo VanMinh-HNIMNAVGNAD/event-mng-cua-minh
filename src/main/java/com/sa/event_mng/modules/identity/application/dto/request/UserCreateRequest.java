@@ -30,7 +30,7 @@ public class UserCreateRequest {
     @Size(max = 100, message = "FULLNAME_TOO_LONG")
     private String fullName;
 
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "PHONE_INVALID")
+    @Pattern(regexp = "^$|[0-9]{10,11}$", message = "PHONE_INVALID")
     private String phone;
 
     @Size(max = 255, message = "ADDRESS_TOO_LONG")

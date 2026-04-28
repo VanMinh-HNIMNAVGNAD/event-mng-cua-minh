@@ -44,6 +44,16 @@ public class OrderController {
                 .build();
     }
 
+    @GetMapping("/{id}/invoice")
+    @Operation(summary = "Tải hóa đơn PDF của đơn hàng")
+    public org.springframework.http.ResponseEntity<byte[]> downloadInvoice(@PathVariable Long id) {
+        byte[] pdf = orderService.getOrderInvoice(id);
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "Invoice_" + id + ".pdf");
+        return new org.springframework.http.ResponseEntity<>(pdf, headers, org.springframework.http.HttpStatus.OK);
+    }
+
     @GetMapping
     @Operation(summary = "Xem lịch sử đơn hàng của tôi")
     public ApiResponse<Page<OrderResponse>> getMyOrders(@RequestParam(defaultValue = "1") int page,

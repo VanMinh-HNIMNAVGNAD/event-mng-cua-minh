@@ -39,7 +39,7 @@ public class EventStatusTask {
         
         for (Event event : events) {
             EventStatus oldStatus = event.getStatus();
-            EventStatus newStatus = determineStatus(event, now);
+            EventStatus newStatus = event.calculateStatus(now);
             
             if (oldStatus != newStatus) {
                 event.setStatus(newStatus);
@@ -47,29 +47,5 @@ public class EventStatusTask {
                 log.info("Event ID {}: Auto-updated status from {} to {}", event.getId(), oldStatus, newStatus);
             }
         }
-    }
-
-    private EventStatus determineStatus(Event event, LocalDateTime now) {
-        // quá end_time COMPLETED
-        if (event.getEndTime() != null && now.isAfter(event.getEndTime())) {
-            return EventStatus.COMPLETED;
-        }
-        
-        // quá thời gian bắt đầu sự kiện (mà chưa có endTime) -> COMPLETED ( coi như đã diễn ra)
-        if (event.getEndTime() == null && event.getStartTime() != null && now.isAfter(event.getStartTime())) {
-            return EventStatus.COMPLETED;
-        }
-
-        // Kiểm tra thời gian bán vé
-        if (event.getSaleEndDate() != null && now.isAfter(event.getSaleEndDate())) {
-            return EventStatus.CLOSED; // Hết hạn bán vé
-        }
-
-        if (event.getSaleStartDate() != null && (now.isAfter(event.getSaleStartDate()) || now.isEqual(event.getSaleStartDate()))) {
-            return EventStatus.OPENING; // Đang trong thời gian bán vé
-        }
-
-        //chưa đến ngày bán vé
-        return EventStatus.UPCOMING;
     }
 }

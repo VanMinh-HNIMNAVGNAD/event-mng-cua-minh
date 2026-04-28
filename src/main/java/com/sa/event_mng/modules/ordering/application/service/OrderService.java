@@ -156,6 +156,8 @@ public class OrderService {
         order.setOrderStatus(OrderStatus.CONFIRMED);
         order.setPaidAt(LocalDateTime.now());
 
+        if (order.getTickets() == null) order.setTickets(new java.util.ArrayList<>());
+        
         for (OrderItem item : order.getItems()) {
             TicketType tt = item.getTicketType();
 
@@ -175,6 +177,7 @@ public class OrderService {
                         .status(TicketStatus.VALID)
                         .build();
                 ticketRepository.save(ticket);
+                order.getTickets().add(ticket);
             }
         }
         orderRepository.save(order);
@@ -189,9 +192,21 @@ public class OrderService {
         }
     }
 
+    public byte[] getOrderInvoice(Long orderId) {
+        User user = getCurrentUser();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        
+        // Kiểm tra xem đơn hàng có thuộc về người dùng hiện tại không
+        if (!order.getCustomer().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        return pdfService.generateOrderInvoice(order);
+    }
     public Page<OrderResponse> getMyOrders(PageRequest pageRequest) {
         User user = getCurrentUser();
-        Page<Order> orderPage = orderRepository.findByCustomerId(user.getId(),pageRequest);
+        Page<Order> orderPage = orderRepository.findByCustomerId(user.getId(), pageRequest);
         return orderPage.map(orderMapper::toOrderResponse);
     }
 

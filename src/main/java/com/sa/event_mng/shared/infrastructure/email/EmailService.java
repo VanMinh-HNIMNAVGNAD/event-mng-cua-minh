@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final org.thymeleaf.TemplateEngine templateEngine;
     
     @org.springframework.beans.factory.annotation.Value("${app.mail.from}")
     private String fromEmail;
@@ -32,10 +33,10 @@ public class EmailService {
 
         try {
             mailSender.send(email);
-            System.out.println("✅ Đã gửi email xác thực thành công tới: " + to);
+            System.out.println("Đã gửi email xác thực thành công tới: " + to);
         } catch (Exception e) {
-            System.err.println("⚠️ KHÔNG THỂ GỬI EMAIL XÁC THỰC! (Do chưa cấu hình SMTP).");
-            System.err.println("👉 LINK XÁC THỰC CỦA BẠN LÀ: " + verificationUrl);
+            System.err.println("KHÔNG THỂ GỬI EMAIL XÁC THỰC! (Do chưa cấu hình SMTP).");
+            System.err.println("LINK XÁC THỰC CỦA BẠN LÀ: " + verificationUrl);
         }
     }
 
@@ -55,41 +56,40 @@ public class EmailService {
 
         try {
             mailSender.send(email);
-            System.out.println("✅ Đã gửi email OTP thành công tới: " + to);
+            System.out.println("Đã gửi email OTP thành công tới: " + to);
         } catch (Exception e) {
-            System.err.println("⚠️ KHÔNG THỂ GỬI EMAIL OTP! (Do chưa cấu hình SMTP).");
-            System.err.println("👉 MÃ OTP CỦA BẠN LÀ: " + otp);
+            System.err.println("KHÔNG THỂ GỬI EMAIL OTP! (Do chưa cấu hình SMTP).");
+            System.err.println("MÃ OTP CỦA BẠN LÀ: " + otp);
         }
     }
 
     public void sendOrderConfirmationWithInvoice(String to, com.sa.event_mng.modules.ordering.domain.model.Order order, byte[] pdfBytes) {
         try {
             jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
-            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(message, true);
+            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
 
-            String subject = "[Event Manager] Xác nhận thanh toán & Hóa đơn điện tử - Order #" + order.getId();
-            String content = "Chào bạn,\n\n" +
-                    "Chúng tôi xác nhận đơn hàng " + order.getId() + " đã được thanh toán thành công.\n" +
-                    "Tổng số tiền: " + String.format("%,.0f", order.getTotalAmount().doubleValue()) + "đ\n\n" +
-                    "Vui lòng xem hóa đơn điện tử (E-Invoice) được đính kèm trong email này.\n\n" +
-                    "Trân trọng!\n\n" +
-                    "--------------------------------------------------\n" +
-                    "Dear customer,\n\n" +
-                    "Your payment for order " + order.getId() + " was successful.\n" +
-                    "Total amount: " + String.format("%,.0f", order.getTotalAmount().doubleValue()) + " VND\n\n" +
-                    "Please find your attached E-Invoice in this email.\n\n" +
-                    "Best regards!";
+            // Prepare Thymeleaf context
+            org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+            context.setVariable("orderId", order.getId());
+            context.setVariable("totalAmount", String.format("%,.0f", order.getTotalAmount().doubleValue()));
+            context.setVariable("orderDate", order.getOrderDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            context.setVariable("tickets", order.getTickets());
+
+            // Process template
+            String htmlContent = templateEngine.process("order-confirmation", context);
 
             helper.setFrom(fromEmail);
             helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(content);
+            helper.setSubject("[Event Hub] Xác nhận đơn hàng & Vé điện tử - Order #" + order.getId());
+            helper.setText(htmlContent, true);
             
             helper.addAttachment("Invoice_" + order.getId() + ".pdf", new org.springframework.core.io.ByteArrayResource(pdfBytes));
 
             mailSender.send(message);
+            System.out.println("Đã gửi email xác nhận thanh toán thành công tới: " + to);
         } catch (Exception e) {
             e.printStackTrace();
+            System.err.println("Lỗi gửi email: " + e.getMessage());
         }
     }
 }

@@ -21,6 +21,7 @@ public class EventRequest {
     private Long categoryId;
 
     private String location;
+    private String province;
 
     @NotNull(message = "START_TIME_REQUIRED")
     @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
