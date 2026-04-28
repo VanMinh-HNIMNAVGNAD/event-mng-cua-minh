@@ -107,12 +107,12 @@ public class AuthenticationService {
 
         String token = UUID.randomUUID().toString();
         
-        // Default role: CUSTOMER
-        Role customerRole = roleRepository.findById("CUSTOMER")
-                .orElseGet(() -> roleRepository.save(Role.builder().name("CUSTOMER").description("Customer role").build()));
+        String roleName = (request.getRole() != null && request.getRole().equals("ORGANIZER")) ? "ORGANIZER" : "CUSTOMER";
+        Role role = roleRepository.findById(roleName)
+                .orElseGet(() -> roleRepository.save(Role.builder().name(roleName).description(roleName + " role").build()));
 
         Set<Role> roles = new HashSet<>();
-        roles.add(customerRole);
+        roles.add(role);
 
         User user = User.builder()
                 .username(request.getUsername())

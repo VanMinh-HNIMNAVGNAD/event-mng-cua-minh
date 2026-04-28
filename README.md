@@ -60,6 +60,7 @@
 *   **carts**: Giỏ hàng tạm thời.
     *   `id` (PK): Long
     *   `customer_id` (FK): Mỗi customer có 1 giỏ hàng.
+    *   `status`: Enum (ACTIVE, COMPLETED, ABANDONED).
 *   **cart_items**: Chi tiết vé trong giỏ.
     *   `id` (PK): Long
     *   `cart_id` (FK)
@@ -68,9 +69,10 @@
 *   **orders**: Thông tin đơn hàng đã thanh toán.
     *   `id` (PK): Long
     *   `customer_id` (FK)
-    *   `total_amount`: BigDecimal (Sau giảm giá).
-    *   `discount_amount`: BigDecimal
-    *   `service_fee`: BigDecimal (Phí sàn).
+    *   `total_amount`: BigDecimal (Tổng tiền khách phải trả).
+    *   `discount_amount`: BigDecimal (Tiền giảm giá).
+    *   `platform_fee_rate`: Float (Phần trăm tiền phí sàn Admin thu của Organizer).
+    *   `service_fee`: BigDecimal (Tiền phí sàn Admin nhận được).
     *   `organizer_amount`: BigDecimal (Tiền BTC nhận được).
     *   `voucher_code`: String
     *   `payment_method`: Enum
