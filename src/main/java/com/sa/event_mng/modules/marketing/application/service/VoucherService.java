@@ -68,23 +68,26 @@ public class VoucherService {
 
     public Double calculateDiscount(String code, Double orderAmount, Long eventId) {
         Voucher voucher = voucherRepository.findByCode(code)
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
-            throw new RuntimeException("Voucher is expired or not yet active");
+        if (now.isBefore(voucher.getStartDate())) {
+            throw new AppException(ErrorCode.VOUCHER_NOT_ACTIVE);
+        }
+        if (now.isAfter(voucher.getEndDate())) {
+            throw new AppException(ErrorCode.VOUCHER_EXPIRED);
         }
 
         if (voucher.getQuantity() != null && voucher.getQuantity() <= 0) {
-            throw new RuntimeException("Voucher is out of stock");
+            throw new AppException(ErrorCode.VOUCHER_OUT_OF_STOCK);
         }
 
         if (voucher.getMinOrderAmount() != null && BigDecimal.valueOf(orderAmount).compareTo(voucher.getMinOrderAmount()) < 0) {
-            throw new RuntimeException("Order amount does not meet the minimum requirement for this voucher");
+            throw new AppException(ErrorCode.VOUCHER_MIN_AMOUNT_NOT_MET);
         }
 
-        if (voucher.getEvent() != null && !voucher.getEvent().getId().equals(eventId)) {
-            throw new RuntimeException("Voucher is not applicable for this event");
+        if (voucher.getEvent() != null && eventId != null && !voucher.getEvent().getId().equals(eventId)) {
+            throw new AppException(ErrorCode.VOUCHER_EVENT_MISMATCH);
         }
 
         BigDecimal discount = BigDecimal.ZERO;

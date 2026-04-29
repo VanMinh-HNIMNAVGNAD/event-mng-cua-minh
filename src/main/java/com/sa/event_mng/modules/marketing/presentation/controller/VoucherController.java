@@ -42,4 +42,14 @@ public class VoucherController {
                 .result(voucherService.getAllVouchers(pageRequest))
                 .build();
     }
+    @GetMapping("/validate")
+    @Operation(summary = "Kiểm tra mã giảm giá")
+    public ApiResponse<Double> validateVoucher(
+            @RequestParam String code,
+            @RequestParam Double amount,
+            @RequestParam(required = false) Long eventId) {
+        return ApiResponse.<Double>builder()
+                .result(voucherService.calculateDiscount(code, amount, eventId))
+                .build();
+    }
 }

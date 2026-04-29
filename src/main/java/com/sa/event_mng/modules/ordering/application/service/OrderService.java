@@ -89,6 +89,16 @@ public class OrderService {
                 .map(CartItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Validate sale period
+        Event event = items.get(0).getTicketType().getEvent();
+        LocalDateTime now = LocalDateTime.now();
+        if (event.getSaleStartDate() != null && now.isBefore(event.getSaleStartDate())) {
+            throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+        }
+        if (event.getSaleEndDate() != null && now.isAfter(event.getSaleEndDate())) {
+            throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+        }
+
         BigDecimal discountAmount = BigDecimal.ZERO;
         if (voucherCode != null && !voucherCode.isBlank()) {
             Long eventId = items.get(0).getTicketType().getEvent().getId();
@@ -98,8 +108,8 @@ public class OrderService {
 
         BigDecimal totalAmount = subTotal.subtract(discountAmount);
 
-        float platformFeeRate = 0.25f;
-        BigDecimal serviceFee = totalAmount.multiply(BigDecimal.valueOf(platformFeeRate));
+        BigDecimal platformFeeRate = new BigDecimal("0.25");
+        BigDecimal serviceFee = totalAmount.multiply(platformFeeRate);
         BigDecimal organizerAmount = totalAmount.subtract(serviceFee);
 
         for (CartItem item : items) {
@@ -112,7 +122,7 @@ public class OrderService {
                 .customer(user)
                 .organizerAmount(organizerAmount)
                 .serviceFee(serviceFee)
-                .platformFeeRate(platformFeeRate)
+                .platformFeeRate(platformFeeRate.floatValue())
                 .totalAmount(totalAmount)
                 .discountAmount(discountAmount)
                 .voucherCode(voucherCode)
@@ -152,43 +162,51 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        order.setPaymentStatus(PaymentStatus.PAID);
-        order.setOrderStatus(OrderStatus.CONFIRMED);
-        order.setPaidAt(LocalDateTime.now());
+        try {
+            order.setPaymentStatus(PaymentStatus.PAID);
+            order.setOrderStatus(OrderStatus.CONFIRMED);
+            order.setPaidAt(LocalDateTime.now());
 
-        if (order.getTickets() == null) order.setTickets(new java.util.ArrayList<>());
-        
-        for (OrderItem item : order.getItems()) {
-            TicketType tt = item.getTicketType();
+            if (order.getTickets() == null) order.setTickets(new java.util.ArrayList<>());
+            
+            for (OrderItem item : order.getItems()) {
+                TicketType tt = item.getTicketType();
 
-            if (tt.getRemainingQuantity() < item.getQuantity()) {
-                throw new AppException(ErrorCode.TICKET_NOT_ENOUGH);
+                if (tt.getRemainingQuantity() < item.getQuantity()) {
+                    throw new AppException(ErrorCode.TICKET_NOT_ENOUGH);
+                }
+                tt.setRemainingQuantity(tt.getRemainingQuantity() - item.getQuantity());
+                ticketTypeRepository.save(tt);
+
+                for (int i = 0; i < item.getQuantity(); i++) {
+                    String ticketCode = "TKT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                    Ticket ticket = Ticket.builder()
+                            .order(order)
+                            .ticketType(tt)
+                            .ticketCode(ticketCode)
+                            .qrCode("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + ticketCode)
+                            .status(TicketStatus.VALID)
+                            .build();
+                    ticketRepository.save(ticket);
+                    order.getTickets().add(ticket);
+                }
             }
-            tt.setRemainingQuantity(tt.getRemainingQuantity() - item.getQuantity());
-            ticketTypeRepository.save(tt);
+            orderRepository.save(order);
 
-            for (int i = 0; i < item.getQuantity(); i++) {
-                String ticketCode = "TKT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-                Ticket ticket = Ticket.builder()
-                        .order(order)
-                        .ticketType(tt)
-                        .ticketCode(ticketCode)
-                        .qrCode("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + ticketCode)
-                        .status(TicketStatus.VALID)
-                        .build();
-                ticketRepository.save(ticket);
-                order.getTickets().add(ticket);
+            // Gửi email sau khi đã lưu DB thành công
+            if (order.getCustomer().getEmail() != null) {
+                byte[] pdfBytes = pdfService.generateOrderInvoice(order);
+                emailService.sendOrderConfirmationWithInvoice(
+                        order.getCustomer().getEmail(),
+                        order,
+                        pdfBytes
+                );
             }
-        }
-        orderRepository.save(order);
-
-        if (order.getCustomer().getEmail() != null) {
-            byte[] pdfBytes = pdfService.generateOrderInvoice(order);
-            emailService.sendOrderConfirmationWithInvoice(
-                    order.getCustomer().getEmail(),
-                    order,
-                    pdfBytes
-            );
+        } catch (AppException ae) {
+            throw ae;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 

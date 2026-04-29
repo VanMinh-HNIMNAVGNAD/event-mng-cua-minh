@@ -73,7 +73,15 @@ public enum ErrorCode {
     TICKET_QUANTITY_INVALID(7003, "Số lượng vé phải lớn hơn 0", HttpStatus.BAD_REQUEST),
     TICKET_INVALID(7004, "Mã vé không hợp lệ", HttpStatus.BAD_REQUEST),
     TICKET_USED(7005, "Vé này đã được sử dụng trước đó", HttpStatus.BAD_REQUEST),
-    TICKET_NOT_OWNED(7006, "Bạn không có quyền quét vé của sự kiện này", HttpStatus.FORBIDDEN);
+    TICKET_NOT_OWNED(7006, "Bạn không có quyền quét vé của sự kiện này", HttpStatus.FORBIDDEN),
+
+    // Voucher errors (8001-8099)
+    VOUCHER_NOT_FOUND(8001, "Mã giảm giá không tồn tại", HttpStatus.NOT_FOUND),
+    VOUCHER_EXPIRED(8002, "Mã giảm giá đã hết hạn sử dụng", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_ACTIVE(8003, "Mã giảm giá chưa đến thời gian sử dụng", HttpStatus.BAD_REQUEST),
+    VOUCHER_OUT_OF_STOCK(8004, "Mã giảm giá đã hết lượt sử dụng", HttpStatus.BAD_REQUEST),
+    VOUCHER_MIN_AMOUNT_NOT_MET(8005, "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã này", HttpStatus.BAD_REQUEST),
+    VOUCHER_EVENT_MISMATCH(8006, "Mã giảm giá không áp dụng cho sự kiện này", HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;

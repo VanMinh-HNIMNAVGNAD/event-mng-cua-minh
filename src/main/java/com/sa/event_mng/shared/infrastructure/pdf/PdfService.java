@@ -25,77 +25,62 @@ public class PdfService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
-            Paragraph title = new Paragraph("E-INVOICE / HOA DON DIEN TU", titleFont);
-            title.setAlignment(Paragraph.ALIGN_CENTER);
-            document.add(title);
+            Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, java.awt.Color.BLACK);
+            Paragraph header = new Paragraph("HOA DON DIEN TU / E-INVOICE", headerFont);
+            header.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            document.add(header);
             document.add(new Paragraph(" "));
 
-            Font infoFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
-            document.add(new Paragraph("Order ID: " + order.getId(), infoFont));
-            document.add(new Paragraph("Customer: " + order.getCustomer().getFullName(), infoFont));
-            document.add(new Paragraph("Date: " + order.getOrderDate(), infoFont));
-            document.add(new Paragraph("Payment Method: " + order.getPaymentMethod(), infoFont));
+            Font infoFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
+            document.add(new Paragraph("Ma don hang / Order ID: #" + order.getId(), infoFont));
+            document.add(new Paragraph("Khach hang / Customer: " + order.getCustomer().getFullName(), infoFont));
+            document.add(new Paragraph("Ngay thanh toan / Date: " + (order.getPaidAt() != null ? order.getPaidAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : order.getOrderDate()), infoFont));
+            document.add(new Paragraph("Phuong thuc / Payment: " + order.getPaymentMethod(), infoFont));
             document.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
-            table.setWidths(new int[]{4, 2, 2, 2});
+            table.setWidths(new float[]{4f, 1f, 2f, 2.5f});
 
-            Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD);
-
-            PdfPCell hcell;
-            hcell = new PdfPCell(new Phrase("Event / Ticket Type", headFont));
-            hcell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            table.addCell(hcell);
-
-            hcell = new PdfPCell(new Phrase("Quantity", headFont));
-            hcell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            table.addCell(hcell);
-
-            hcell = new PdfPCell(new Phrase("Unit Price", headFont));
-            hcell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            table.addCell(hcell);
-
-            hcell = new PdfPCell(new Phrase("Subtotal", headFont));
-            hcell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            table.addCell(hcell);
+            Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+            String[] headers = {"Dich vu / Event & Ticket", "SL", "Gia / Price", "Thanh tien"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, headFont));
+                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+                cell.setPadding(8);
+                cell.setBackgroundColor(java.awt.Color.LIGHT_GRAY);
+                table.addCell(cell);
+            }
 
             for (OrderItem item : order.getItems()) {
-                PdfPCell cell;
-
-                String itemName = item.getTicketType().getEvent().getName() + " - " + item.getTicketType().getName();
-                cell = new PdfPCell(new Phrase(itemName));
-                cell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
-                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_LEFT);
-                table.addCell(cell);
-
-                cell = new PdfPCell(new Phrase(String.valueOf(item.getQuantity())));
-                cell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
-                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-                table.addCell(cell);
-
-                cell = new PdfPCell(new Phrase(String.valueOf(item.getUnitPrice())));
-                cell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
-                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
-                table.addCell(cell);
-
-                cell = new PdfPCell(new Phrase(String.valueOf(item.getSubtotal())));
-                cell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
-                cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
-                table.addCell(cell);
+                table.addCell(new Phrase(item.getTicketType().getEvent().getName() + "\n(" + item.getTicketType().getName() + ")", infoFont));
+                PdfPCell qtyCell = new PdfPCell(new Phrase(String.valueOf(item.getQuantity()), infoFont));
+                qtyCell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+                table.addCell(qtyCell);
+                
+                table.addCell(new Phrase(String.format("%,.0f", item.getUnitPrice()) + " d", infoFont));
+                table.addCell(new Phrase(String.format("%,.0f", item.getSubtotal()) + " d", infoFont));
             }
-
             document.add(table);
-            document.add(new Paragraph(" "));
 
-            document.add(new Paragraph("SubTotal: " + order.getTotalAmount().add(order.getDiscountAmount() != null ? order.getDiscountAmount() : java.math.BigDecimal.ZERO), infoFont));
+            Paragraph totals = new Paragraph();
+            totals.setAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
+            java.math.BigDecimal subTotalVal = order.getTotalAmount().add(order.getDiscountAmount() != null ? order.getDiscountAmount() : java.math.BigDecimal.ZERO);
+            totals.add(new Phrase("Tam tinh / Subtotal: " + String.format("%,.0f", subTotalVal) + " d\n", infoFont));
+            
             if (order.getDiscountAmount() != null && order.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
-                document.add(new Paragraph("Discount: -" + order.getDiscountAmount() + " (Voucher: " + order.getVoucherCode() + ")", infoFont));
+                totals.add(new Phrase("Giam gia / Discount: -" + String.format("%,.0f", order.getDiscountAmount()) + " d (" + order.getVoucherCode() + ")\n", infoFont));
             }
             
-            Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
-            document.add(new Paragraph("Total Paid: " + order.getTotalAmount() + " VND", totalFont));
+            Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, java.awt.Color.RED);
+            totals.add(new Phrase("\nTONG CONG / TOTAL PAID: " + String.format("%,.0f", order.getTotalAmount()) + " VND", totalFont));
+            document.add(totals);
+
+            document.add(new Paragraph("\n\n"));
+            Paragraph footer = new Paragraph("Cam on quy khach da tin tuong Event Hub!\nThank you for choosing Event Hub!", 
+                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, java.awt.Color.GRAY));
+            footer.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            document.add(footer);
 
             document.close();
         } catch (Exception e) {
