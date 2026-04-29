@@ -35,7 +35,7 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
 
     @Query(value = """
     select e.name as eventName,
-    o.total_amount as totalRevenue,
+    sum(o.total_amount) as totalRevenue,
     sum(tt.total_quantity - tt.remaining_quantity) as ticketsSold,
     CASE
     	WHEN SUM(tt.total_quantity) = 0 THEN 0

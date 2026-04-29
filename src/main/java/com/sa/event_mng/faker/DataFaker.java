@@ -15,9 +15,7 @@
 //            TicketTypeSeeder ticketTypeSeeder,
 //            CartSeeder cartSeeder,
 //            CartItemSeeder cartItemSeeder,
-//            OrderSeeder orderSeeder,
-//            OrderItemSeeder orderItemSeeder,
-//            TicketSeeder ticketSeeder
+//            OrderSeeder orderSeeder
 //    ) {
 //        return args -> {
 //            System.out.println("=== START SEED DATABASE ===");
@@ -29,8 +27,6 @@
 //            cartSeeder.seed();
 //            cartItemSeeder.seed();
 //            orderSeeder.seed();
-//            orderItemSeeder.seed();
-//            ticketSeeder.seed();
 //
 //            System.out.println("=== END SEED DATABASE ===");
 //        };

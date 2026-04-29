@@ -32,6 +32,9 @@ public class ApplicationInitConfig {
   ApplicationRunner applicationRunner(UserRepository userRepo, RoleRepository roleRepo) {
     log.info("CONFIG: Init Application");
     return args -> {
+
+
+      // Create default admin user if it doesn't exist
       if (userRepo.findByUsername("admin").isEmpty()) {
         User user =
             User.builder()
@@ -42,13 +45,14 @@ public class ApplicationInitConfig {
                 .phone("0123456789")
                 .enabled(true)
                 .build();
-                
-        Role adminRole = roleRepo.findById("ADMIN").orElseGet(() -> {
-            return roleRepo.save(Role.builder()
-                .name("ADMIN")
-                .description("Administrator")
-                .build());
-        });
+
+        // Create default roles if they don't exist
+        createRoleIfNotExists(roleRepo, "ADMIN", "Administrator");
+        createRoleIfNotExists(roleRepo, "ORGANIZER", "Event Organizer");
+        createRoleIfNotExists(roleRepo, "STAFF", "Staff Member");
+        createRoleIfNotExists(roleRepo, "CUSTOMER", "Customer");
+
+        Role adminRole = roleRepo.findById("ADMIN").orElseThrow();
 
         java.util.Set<Role> roles = new java.util.HashSet<>();
         roles.add(adminRole);
@@ -60,5 +64,15 @@ public class ApplicationInitConfig {
         log.info("Admin account already exists");
       }
     };
+  }
+
+  private void createRoleIfNotExists(RoleRepository roleRepo, String roleName, String description) {
+    if (roleRepo.findById(roleName).isEmpty()) {
+      roleRepo.save(Role.builder()
+          .name(roleName)
+          .description(description)
+          .build());
+      log.info("Role '{}' has been created", roleName);
+    }
   }
 }
