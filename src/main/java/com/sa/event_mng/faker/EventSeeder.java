@@ -53,23 +53,60 @@ public class EventSeeder {
         if (organizers.isEmpty() || categories.isEmpty()) return;
 
         LocalDateTime now = LocalDateTime.now();
-        int totalDays = 150;
 
         for (int i = 0; i < 500; i++) {
-            LocalDateTime startTime = now.minusDays(totalDays)
-                    .plusDays(random.nextInt(totalDays))
-                    .withHour(8 + random.nextInt(12))
-                    .withMinute(0);
-            LocalDateTime endTime = startTime.plusHours(2 + random.nextInt(6));
-
-            EventStatus status;
-            if (startTime.isAfter(now))       status = EventStatus.UPCOMING;
-            else if (endTime.isAfter(now))    status = EventStatus.OPENING;
-            else                              status = EventStatus.COMPLETED;
-
             int locIdx = random.nextInt(LOCATIONS.length);
             Category cat = categories.get(random.nextInt(categories.size()));
             User organizer = organizers.get(random.nextInt(organizers.size()));
+
+            // Phân bổ đều 6 trạng thái (~83 event mỗi loại)
+            EventStatus status = EventStatus.values()[i % 6];
+            // values() order: PENDING, UPCOMING, OPENING, CLOSED, COMPLETED, CANCELLED
+
+            LocalDateTime startTime, endTime, saleStart, saleEnd;
+            switch (status) {
+                case PENDING -> {
+                    // Tương lai gần, chưa duyệt — saleStart chưa đến
+                    startTime = now.plusDays(30 + random.nextInt(60)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = now.plusDays(5 + random.nextInt(20));
+                    saleEnd   = startTime.minusHours(1);
+                }
+                case UPCOMING -> {
+                    // Đã duyệt, saleStart trong tương lai gần
+                    startTime = now.plusDays(20 + random.nextInt(70)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = now.plusDays(3 + random.nextInt(10));
+                    saleEnd   = startTime.minusHours(1);
+                }
+                case OPENING -> {
+                    // Đang mở bán — saleStart đã qua (trong 6 tháng), saleEnd chưa đến
+                    startTime = now.plusDays(5 + random.nextInt(30)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = now.minusDays(1 + random.nextInt(30));
+                    saleEnd   = startTime.minusHours(1);
+                }
+                case CLOSED -> {
+                    // Hết bán, chờ diễn ra — saleEnd đã qua, startTime chưa đến
+                    startTime = now.plusDays(1 + random.nextInt(10)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = now.minusDays(30 + random.nextInt(150));
+                    saleEnd   = now.minusHours(1 + random.nextInt(72));
+                }
+                case COMPLETED -> {
+                    // Đã kết thúc — toàn bộ trong 6 tháng qua
+                    startTime = now.minusDays(7 + random.nextInt(173)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = startTime.minusDays(20 + random.nextInt(30));
+                    saleEnd   = startTime.minusHours(1);
+                }
+                default -> { // CANCELLED — rải đều trong 6 tháng qua
+                    startTime = now.minusDays(random.nextInt(180)).withHour(8 + random.nextInt(12)).withMinute(0);
+                    endTime   = startTime.plusHours(2 + random.nextInt(6));
+                    saleStart = startTime.minusDays(20 + random.nextInt(30));
+                    saleEnd   = startTime.minusHours(1);
+                }
+            }
 
             eventRepository.save(Event.builder()
                     .name(NAME_PREFIXES[random.nextInt(NAME_PREFIXES.length)]
@@ -81,8 +118,8 @@ public class EventSeeder {
                     .province(PROVINCES[locIdx])
                     .startTime(startTime)
                     .endTime(endTime)
-                    .saleStartDate(startTime.minusDays(30))
-                    .saleEndDate(startTime.minusHours(1))
+                    .saleStartDate(saleStart)
+                    .saleEndDate(saleEnd)
                     .description(DESC_TEMPLATES[random.nextInt(DESC_TEMPLATES.length)])
                     .status(status)
                     .build());

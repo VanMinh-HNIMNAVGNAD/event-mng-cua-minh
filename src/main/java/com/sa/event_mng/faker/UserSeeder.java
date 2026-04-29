@@ -50,8 +50,8 @@ public class UserSeeder {
         userRepository.save(staff);
     }
 
-    private void createUsersByRole(String roleId, String usernamePrefix, String fullNamePrefix, int count) {
-        Role role = roleRepository.findById(roleId).orElseThrow();
+    private void createUsersByRole(String roleName, String usernamePrefix, String fullNamePrefix, int count) {
+        Role role = roleRepository.findByName(roleName);
         Set<Role> roles = new HashSet<>();
         roles.add(role);
 
