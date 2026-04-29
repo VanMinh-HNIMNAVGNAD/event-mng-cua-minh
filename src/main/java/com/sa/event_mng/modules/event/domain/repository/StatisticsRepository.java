@@ -18,9 +18,6 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
 
     @Query(value = """
     SELECT HOUR(e.start_time) AS hourOfDay,
-        COUNT(DISTINCT e.id) AS countEvents,
-        SUM(t.total_quantity) AS totalTickets,
-        SUM(t.total_quantity - t.remaining_quantity) AS ticketsSold,
         CASE 
             WHEN SUM(t.total_quantity) = 0 THEN 0
             ELSE SUM(t.total_quantity - t.remaining_quantity) * 100.0 / SUM(t.total_quantity)

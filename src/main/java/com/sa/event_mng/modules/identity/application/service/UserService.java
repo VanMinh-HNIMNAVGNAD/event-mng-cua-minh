@@ -67,12 +67,14 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Long> getUserStats() {
-        long customerCount = userRepository.countByRoleName("CUSTOMER");
         long organizerCount = userRepository.countByRoleName("ORGANIZER");
+        long staffCount = userRepository.countByRoleName("STAFF");
+        long customerCount = userRepository.countByRoleName("CUSTOMER");
         return Map.of(
                 "customers", customerCount,
                 "organizers", organizerCount,
-                "total", customerCount + organizerCount
+                "staffs", staffCount,
+                "total", customerCount + organizerCount + staffCount
         );
     }
 
