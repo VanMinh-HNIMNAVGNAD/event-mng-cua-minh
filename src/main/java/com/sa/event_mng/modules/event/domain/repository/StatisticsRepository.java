@@ -17,8 +17,7 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
     List<EventStatusStatsProjection> findEventStatusStats(@Param("quarter") Long quarter , @Param("year") Long year);
 
     @Query(value = """
-    SELECT 
-        HOUR(e.start_time) AS hourOfDay,
+    SELECT HOUR(e.start_time) AS hourOfDay,
         COUNT(DISTINCT e.id) AS countEvents,
         SUM(t.total_quantity) AS totalTickets,
         SUM(t.total_quantity - t.remaining_quantity) AS ticketsSold,
@@ -36,7 +35,7 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
 
     @Query(value = """
     select e.name as eventName,
-    sum(oi.subtotal) as totalRevenue,
+    o.total_amount as totalRevenue,
     sum(tt.total_quantity - tt.remaining_quantity) as ticketsSold,
     CASE
     	WHEN SUM(tt.total_quantity) = 0 THEN 0
@@ -47,6 +46,7 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
     join ticket_types tt on oi.ticket_type_id = tt.id
     right join events e on e.id = tt.event_id
     where e.organizer_id = :id
+    and o.payment_status = 'PAID'
     group by e.id
     """, nativeQuery = true)
     List<EventRevenueStatsOrganizerProjection> findEventRevenueOrganizerStats(@Param("id") Long id);
@@ -54,6 +54,7 @@ public interface StatisticsRepository extends JpaRepository<Event, Long> {
     @Query(value = """
     SELECT sum(service_fee) as totalRevenue
     FROM orders
+    WHERE payment_status = 'PAID'
     """, nativeQuery = true)
     EventRevenueStatsAdminProjection findEventRevenueAdminStats();
 
