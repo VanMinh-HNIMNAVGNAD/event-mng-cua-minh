@@ -33,7 +33,6 @@ public class ApplicationInitConfig {
     log.info("CONFIG: Init Application");
     return args -> {
 
-
       // Create default admin user if it doesn't exist
       if (userRepo.findByUsername("admin").isEmpty()) {
         User user =

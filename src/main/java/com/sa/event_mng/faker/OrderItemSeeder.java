@@ -1,84 +1,56 @@
-// package com.sa.event_mng.faker;
+package com.sa.event_mng.faker;
 
-// import com.sa.event_mng.model.entity.Order;
-// import com.sa.event_mng.model.entity.OrderItem;
-// import com.sa.event_mng.model.entity.TicketType;
-// import com.sa.event_mng.repository.OrderRepository;
-// import com.sa.event_mng.repository.TicketTypeRepository;
-// import org.springframework.stereotype.Component;
+import com.sa.event_mng.modules.event.domain.model.TicketType;
+import com.sa.event_mng.modules.event.domain.repository.EventRepository;
+import com.sa.event_mng.modules.event.domain.repository.TicketTypeRepository;
+import com.sa.event_mng.modules.ordering.domain.model.Order;
+import com.sa.event_mng.modules.ordering.domain.model.OrderItem;
+import com.sa.event_mng.modules.ordering.domain.repository.OrderItemRepository;
+import com.sa.event_mng.modules.ordering.domain.repository.OrderRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
-// import java.math.BigDecimal;
-// import java.util.ArrayList;
-// import java.util.List;
-// import java.util.Random;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Random;
 
-// @Component
-// public class OrderItemSeeder {
+@Component
+@RequiredArgsConstructor
+public class OrderItemSeeder {
 
-//     private final OrderRepository orderRepository;
-//     private final TicketTypeRepository ticketTypeRepository;
-//     private final Random random = new Random();
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final EventRepository eventRepository;
+    private final TicketTypeRepository ticketTypeRepository;
 
-//     public OrderItemSeeder(OrderRepository orderRepository, TicketTypeRepository ticketTypeRepository) {
-//         this.orderRepository = orderRepository;
-//         this.ticketTypeRepository = ticketTypeRepository;
-//     }
+    private final Random random = new Random();
 
-//     public void seed() {
-//         List<Order> orders = orderRepository.findAll();
-//         List<TicketType> ticketTypes = ticketTypeRepository.findAll();
+    public void seed() {
+        List<Order> orders = orderRepository.findAll();
+        List<com.sa.event_mng.modules.event.domain.model.Event> events = eventRepository.findAll();
+        if (orders.isEmpty() || events.isEmpty()) return;
 
-//         if (orders.isEmpty()) {
-//             System.out.println("No orders found. Seed orders first.");
-//             return;
-//         }
+        for (Order order : orders) {
+            com.sa.event_mng.modules.event.domain.model.Event event = events.get(random.nextInt(events.size()));
+            List<TicketType> types = ticketTypeRepository.findByEventId(event.getId());
+            if (types.isEmpty()) continue;
 
-//         if (ticketTypes.isEmpty()) {
-//             System.out.println("No ticket types found. Seed ticket types first.");
-//             return;
-//         }
+            int itemCount = random.nextInt(3) + 1;
+            for (int j = 0; j < itemCount; j++) {
+                TicketType tt = types.get(random.nextInt(types.size()));
+                if (tt.getRemainingQuantity() == null || tt.getRemainingQuantity() <= 0) continue;
 
-//         int createdCount = 0;
+                int qty = Math.min(random.nextInt(3) + 1, tt.getRemainingQuantity());
+                BigDecimal unit = tt.getPrice();
 
-//         for (Order order : orders) {
-//             if (order.getItems() != null && !order.getItems().isEmpty()) {
-//                 continue;
-//             }
-
-//             int itemCount = random.nextInt(3) + 1;
-//             List<OrderItem> items = new ArrayList<>();
-//             BigDecimal totalAmount = BigDecimal.ZERO;
-
-//             for (int i = 0; i < itemCount; i++) {
-//                 TicketType ticketType = ticketTypes.get(random.nextInt(ticketTypes.size()));
-
-//                 if (ticketType.getRemainingQuantity() == null || ticketType.getRemainingQuantity() <= 0) {
-//                     continue;
-//                 }
-
-//                 int quantity = Math.min(random.nextInt(4) + 1, ticketType.getRemainingQuantity());
-//                 BigDecimal unitPrice = ticketType.getPrice();
-//                 BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-
-//                 OrderItem item = new OrderItem();
-//                 item.setOrder(order);
-//                 item.setTicketType(ticketType);
-//                 item.setQuantity(quantity);
-//                 item.setUnitPrice(unitPrice);
-//                 item.setSubtotal(subtotal);
-
-//                 items.add(item);
-//                 totalAmount = totalAmount.add(subtotal);
-//                 createdCount++;
-//             }
-
-//             order.setItems(items);
-//             if (!items.isEmpty()) {
-//                 order.setTotalAmount(totalAmount);
-//             }
-//         }
-
-//         orderRepository.saveAll(orders);
-//         System.out.println("Seeded " + createdCount + " order items");
-//     }
-// }
+                OrderItem item = new OrderItem();
+                item.setOrder(order);
+                item.setTicketType(tt);
+                item.setQuantity(qty);
+                item.setUnitPrice(unit);
+                item.setSubtotal(unit.multiply(BigDecimal.valueOf(qty)));
+                orderItemRepository.save(item);
+            }
+        }
+    }
+}
