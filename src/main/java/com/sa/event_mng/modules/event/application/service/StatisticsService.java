@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -62,14 +64,16 @@ public class StatisticsService {
 
         List<EventTemporalStatsProjection> eventTemporalStatsProjection = statisticsRepository.findEventTemporalStats(dayOfWeek);
 
-        List<EventTemporalStatsResponse.EventTemporalStatsDetail> eventTemporalStatsDetails = eventTemporalStatsProjection.stream()
-                .map(statsMapper::toEventTemporalStatsResponse)
-                .map(detail -> new EventTemporalStatsResponse.EventTemporalStatsDetail(
-                        detail.getHourOfDay(),
-                        detail.getCountEvents(),
-                        detail.getTotalTickets(),
-                        detail.getTicketsSold(),
-                        detail.getPercentageOfTicketsSold()
+        Map<Integer, Double> dataByHour = eventTemporalStatsProjection.stream()
+                .collect(Collectors.toMap(
+                        EventTemporalStatsProjection::getHourOfDay,
+                        EventTemporalStatsProjection::getPercentageOfTicketsSold
+                ));
+
+        List<EventTemporalStatsResponse.EventTemporalStatsDetail> eventTemporalStatsDetails = IntStream.range(0, 24)
+                .mapToObj(h -> new EventTemporalStatsResponse.EventTemporalStatsDetail(
+                        h,
+                        dataByHour.getOrDefault(h, 0.0)
                 ))
                 .toList();
         return EventTemporalStatsResponse.builder()
