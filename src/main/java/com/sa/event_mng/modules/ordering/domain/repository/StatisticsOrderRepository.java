@@ -34,15 +34,16 @@ public interface StatisticsOrderRepository extends JpaRepository<Order, Long> {
     SELECT SUM(service_fee) as totalRevenue
     FROM orders
     WHERE payment_status = 'PAID'
+        AND YEAR(paid_at) = :year
     """, nativeQuery = true)
-    EventRevenueStatsAdminProjection findEventRevenueAdminStats();
+    EventRevenueStatsAdminProjection findEventRevenueAdminStats(@Param("year") int year);
 
     @Query(value = """
-    SELECT YEAR(created_at) as year, MONTH(created_at) as month, SUM(service_fee) as revenue
+    SELECT YEAR(paid_at) as year, MONTH(paid_at) as month, SUM(service_fee) as revenue
     FROM orders
-    WHERE payment_status = 'PAID'
-    GROUP BY YEAR(created_at), MONTH(created_at)
-    ORDER BY year DESC, month DESC
+    WHERE payment_status = 'PAID' AND YEAR(paid_at) = :year
+    GROUP BY YEAR(paid_at), MONTH(paid_at)
+    ORDER BY month ASC
     """, nativeQuery = true)
-    List<MonthlyRevenueProjection> findMonthlyRevenueAdmin();
+    List<MonthlyRevenueProjection> findMonthlyRevenueAdmin(@Param("year") int year);
 }

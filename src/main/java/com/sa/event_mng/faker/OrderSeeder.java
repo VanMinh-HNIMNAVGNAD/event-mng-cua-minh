@@ -45,8 +45,12 @@ public class OrderSeeder {
                 order.setServiceFee(serviceFee);
                 order.setOrganizerAmount(totalAmount.subtract(serviceFee));
                 order.setPlatformFeeRate(0.05f);
-                order.setOrderDate(LocalDateTime.now().minusDays(random.nextInt(30)));
-                order.setPaidAt(LocalDateTime.now().minusDays(random.nextInt(29)));
+                LocalDateTime start = LocalDateTime.of(2025, 1, 1, 0, 0);
+                long totalDays = java.time.temporal.ChronoUnit.DAYS.between(start, LocalDateTime.now());
+                long randomDays = (long) (random.nextDouble() * totalDays);
+                LocalDateTime paidAt = start.plusDays(randomDays);
+                order.setOrderDate(paidAt.minusHours(random.nextInt(24)));
+                order.setPaidAt(paidAt);
                 orderRepository.save(order);
             }
         }

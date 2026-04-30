@@ -31,9 +31,9 @@ public class StatisticsRevenueController {
         return ApiResponse.<List<EventRevenueStatsOrganizerResponse>>builder().result(statisticsRevenueService.getEventRevenueStatsOrganizer(idOrganizer)).build();
     }
 
-    @GetMapping("/statistics-revenue/admin")
-    @Operation(summary = "Thống kê doanh thu (admin, tính tổng tiền dịch vụ)")
-    public ApiResponse<EventRevenueStatsAdminResponse> getStatisticsRevenueAdmin() {
-        return ApiResponse.<EventRevenueStatsAdminResponse>builder().result(statisticsRevenueService.getEventRevenueStatsAdmin()).build();
+    @GetMapping("/statistics-service-revenue/admin/{year}")
+    @Operation(summary = "Thống kê doanh thu phí dịch vụ (admin)")
+    public ApiResponse<EventRevenueStatsAdminResponse> getStatisticsServiceRevenueAdmin(@PathVariable int year) {
+        return ApiResponse.<EventRevenueStatsAdminResponse>builder().result(statisticsRevenueService.getEventServiceRevenueStatsAdmin(year)).build();
     }
 }

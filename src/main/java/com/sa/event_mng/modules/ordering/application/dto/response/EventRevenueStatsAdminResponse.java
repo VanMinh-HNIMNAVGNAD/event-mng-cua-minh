@@ -13,4 +13,15 @@ import java.util.List;
 public class EventRevenueStatsAdminResponse {
     private BigDecimal totalRevenue;
     private List<MonthlyRevenueResponse> monthlyRevenues;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MonthlyRevenueResponse {
+        private int year;
+        private int month;
+        private BigDecimal revenue;
+    }
 }
