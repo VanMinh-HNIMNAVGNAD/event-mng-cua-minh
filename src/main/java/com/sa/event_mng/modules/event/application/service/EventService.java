@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +60,8 @@ public class EventService {
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        validateEventDates(request);
 
         Event event = Event.builder()
                 .name(request.getName())
@@ -141,6 +142,9 @@ public class EventService {
         event.setEndTime(request.getEndTime());
         event.setSaleStartDate(request.getSaleStartDate());
         event.setSaleEndDate(request.getSaleEndDate());
+
+        validateEventDates(request);
+
         event.setDescription(request.getDescription());
         if (request.getStatus() != null)
             event.setStatus(request.getStatus());
@@ -160,6 +164,25 @@ public class EventService {
         }
 
         return eventMapper.toEventResponse(eventRepository.save(event));
+    }
+
+    private void validateEventDates(EventRequest request) {
+        if (request.getSaleStartDate() == null || request.getSaleEndDate() == null ||
+            request.getStartTime() == null || request.getEndTime() == null) {
+            return; // DTO validation will catch this if required
+        }
+
+        if (request.getSaleEndDate().isBefore(request.getSaleStartDate().plusHours(12))) {
+            throw new AppException(ErrorCode.EVENT_SALE_PERIOD_INVALID);
+        }
+
+        if (request.getStartTime().isBefore(request.getSaleEndDate().plusDays(1))) {
+            throw new AppException(ErrorCode.EVENT_START_TIME_INVALID);
+        }
+
+        if (request.getEndTime().isBefore(request.getStartTime().plusHours(2))) {
+            throw new AppException(ErrorCode.EVENT_DURATION_INVALID);
+        }
     }
 
     private List<EventImage> saveImages(List<MultipartFile> files, Event event) {
@@ -294,20 +317,35 @@ public class EventService {
                 .build();
     }
 
-    public List<BlogEventResponse> getBlogNews() {
+    public Page<BlogEventResponse> getBlogNews(int page, int size) {
         LocalDateTime now = LocalDateTime.now();
+        PageRequest pageRequest = PageRequest.of(page, size);
 
-        // Lấy tất cả sự kiện đang hoạt động (loại trừ COMPLETED và CANCELLED)
-        // Đồng thời loại bỏ sự kiện đã kết thúc (endTime đã qua)
-        List<EventStatus> excludedStatuses = List.of(EventStatus.COMPLETED, EventStatus.CANCELLED);
+        // Chỉ lấy các sự kiện đã được phê duyệt (UPCOMING, OPENING, CLOSED)
+        List<EventStatus> activeStatuses = List.of(
+                EventStatus.UPCOMING,
+                EventStatus.OPENING,
+                EventStatus.CLOSED
+        );
 
-        List<Event> events = eventRepository.findAll().stream()
-                .filter(e -> !excludedStatuses.contains(e.getStatus()))
-                .filter(e -> e.getEndTime() == null || e.getEndTime().isAfter(now))
-                .sorted(Comparator.comparing(Event::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))
-                .collect(Collectors.toList());
+        Specification<Event> spec = (root, query, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            
+            // Lọc theo trạng thái active
+            predicates.add(root.get("status").in(activeStatuses));
+            
+            // Lọc: thời gian hiện tại <= thời gian kết thúc bán vé
+            predicates.add(cb.or(
+                cb.isNull(root.get("saleEndDate")),
+                cb.greaterThanOrEqualTo(root.get("saleEndDate"), now)
+            ));
 
-        return events.stream().map(e -> BlogEventResponse.builder()
+            query.orderBy(cb.asc(root.get("startTime")));
+            
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        return eventRepository.findAll(spec, pageRequest).map(e -> BlogEventResponse.builder()
                 .id(e.getId())
                 .name(e.getName())
                 .location(e.getLocation())
@@ -322,6 +360,6 @@ public class EventService {
                 .imageUrl(e.getImages() != null && !e.getImages().isEmpty()
                         ? e.getImages().get(0).getImageUrl() : null)
                 .build()
-        ).collect(Collectors.toList());
+        );
     }
 }

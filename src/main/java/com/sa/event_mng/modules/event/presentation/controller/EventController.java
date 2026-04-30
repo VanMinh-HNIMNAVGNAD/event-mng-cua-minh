@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/events")
@@ -131,9 +130,12 @@ public class EventController {
 
         @GetMapping("/blog-news")
         @Operation(summary = "Lấy dữ liệu đồng bộ cho trang Blog tin tức")
-        public ApiResponse<List<BlogEventResponse>> getBlogNews() {
-                return ApiResponse.<List<BlogEventResponse>>builder()
-                                .result(eventService.getBlogNews())
+        public ApiResponse<Page<BlogEventResponse>> getBlogNews(
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "10") int size
+        ) {
+                return ApiResponse.<Page<BlogEventResponse>>builder()
+                                .result(eventService.getBlogNews(page, size))
                                 .build();
         }
 }

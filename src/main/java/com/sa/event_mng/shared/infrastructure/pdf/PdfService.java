@@ -2,9 +2,9 @@ package com.sa.event_mng.shared.infrastructure.pdf;
 
 import com.lowagie.text.Document;
 import com.lowagie.text.Font;
-import com.lowagie.text.FontFactory;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -25,25 +25,30 @@ public class PdfService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, java.awt.Color.BLACK);
-            Paragraph header = new Paragraph("HOA DON DIEN TU / E-INVOICE", headerFont);
+            
+            BaseFont baseFont = BaseFont.createFont("C:/Windows/Fonts/Arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font headerFont = new Font(baseFont, 22, Font.BOLD, java.awt.Color.BLACK);
+            Font infoFont = new Font(baseFont, 11, Font.NORMAL, java.awt.Color.BLACK);
+            Font headFont = new Font(baseFont, 11, Font.BOLD, java.awt.Color.BLACK);
+            Font totalFont = new Font(baseFont, 16, Font.BOLD, java.awt.Color.RED);
+            Font footerFont = new Font(baseFont, 10, Font.ITALIC, java.awt.Color.GRAY);
+
+            Paragraph header = new Paragraph("E-INVOICE", headerFont);
             header.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
             document.add(header);
             document.add(new Paragraph(" "));
 
-            Font infoFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
-            document.add(new Paragraph("Ma don hang / Order ID: #" + order.getId(), infoFont));
-            document.add(new Paragraph("Khach hang / Customer: " + order.getCustomer().getFullName(), infoFont));
-            document.add(new Paragraph("Ngay thanh toan / Date: " + (order.getPaidAt() != null ? order.getPaidAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : order.getOrderDate()), infoFont));
-            document.add(new Paragraph("Phuong thuc / Payment: " + order.getPaymentMethod(), infoFont));
+            document.add(new Paragraph("Order ID: #" + order.getId(), infoFont));
+            document.add(new Paragraph("Customer: " + order.getCustomer().getFullName(), infoFont));
+            document.add(new Paragraph("Date: " + (order.getPaidAt() != null ? order.getPaidAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : order.getOrderDate()), infoFont));
+            document.add(new Paragraph("Payment: " + order.getPaymentMethod(), infoFont));
             document.add(new Paragraph(" "));
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
             table.setWidths(new float[]{4f, 1f, 2f, 2.5f});
 
-            Font headFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-            String[] headers = {"Dich vu / Event & Ticket", "SL", "Gia / Price", "Thanh tien"};
+            String[] headers = {"Event & Ticket", "Quantity", "Price", "Total"};
             for (String h : headers) {
                 PdfPCell cell = new PdfPCell(new Phrase(h, headFont));
                 cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
@@ -66,19 +71,17 @@ public class PdfService {
             Paragraph totals = new Paragraph();
             totals.setAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
             java.math.BigDecimal subTotalVal = order.getTotalAmount().add(order.getDiscountAmount() != null ? order.getDiscountAmount() : java.math.BigDecimal.ZERO);
-            totals.add(new Phrase("Tam tinh / Subtotal: " + String.format("%,.0f", subTotalVal) + " d\n", infoFont));
+            totals.add(new Phrase("Subtotal: " + String.format("%,.0f", subTotalVal) + " d\n", infoFont));
             
             if (order.getDiscountAmount() != null && order.getDiscountAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
-                totals.add(new Phrase("Giam gia / Discount: -" + String.format("%,.0f", order.getDiscountAmount()) + " d (" + order.getVoucherCode() + ")\n", infoFont));
+                totals.add(new Phrase("Discount: -" + String.format("%,.0f", order.getDiscountAmount()) + " d (" + order.getVoucherCode() + ")\n", infoFont));
             }
             
-            Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, java.awt.Color.RED);
-            totals.add(new Phrase("\nTONG CONG / TOTAL PAID: " + String.format("%,.0f", order.getTotalAmount()) + " VND", totalFont));
+            totals.add(new Phrase("\nTOTAL PAID: " + String.format("%,.0f", order.getTotalAmount()) + " VND", totalFont));
             document.add(totals);
 
             document.add(new Paragraph("\n\n"));
-            Paragraph footer = new Paragraph("Cam on quy khach da tin tuong Event Hub!\nThank you for choosing Event Hub!", 
-                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, java.awt.Color.GRAY));
+            Paragraph footer = new Paragraph("Thank you for your purchase!", footerFont);
             footer.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
             document.add(footer);
 

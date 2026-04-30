@@ -90,20 +90,29 @@ public class OrderService {
                 .map(CartItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Validate sale period
-        Event event = items.get(0).getTicketType().getEvent();
+        // Validate sale period and status for all events in items
         LocalDateTime now = LocalDateTime.now();
-        if (event.getSaleStartDate() != null && now.isBefore(event.getSaleStartDate())) {
-            throw new AppException(ErrorCode.EVENT_NOT_OPENING);
-        }
-        if (event.getSaleEndDate() != null && now.isAfter(event.getSaleEndDate())) {
-            throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+        for (CartItem item : items) {
+            Event event = item.getTicketType().getEvent();
+            if (event.getStatus() != EventStatus.OPENING) {
+                throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+            }
+            if (event.getSaleStartDate() != null && now.isBefore(event.getSaleStartDate())) {
+                throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+            }
+            if (event.getSaleEndDate() != null && now.isAfter(event.getSaleEndDate())) {
+                throw new AppException(ErrorCode.EVENT_NOT_OPENING);
+            }
         }
 
         BigDecimal discountAmount = BigDecimal.ZERO;
         if (voucherCode != null && !voucherCode.isBlank()) {
-            Long eventId = items.get(0).getTicketType().getEvent().getId();
-            Double discount = voucherService.calculateDiscount(voucherCode, subTotal.doubleValue(), eventId);
+            java.util.Map<Long, Double> eventAmounts = items.stream()
+                    .collect(Collectors.groupingBy(
+                            item -> item.getTicketType().getEvent().getId(),
+                            Collectors.summingDouble(item -> item.getSubtotal().doubleValue())
+                    ));
+            Double discount = voucherService.calculateDiscount(voucherCode, eventAmounts);
             discountAmount = BigDecimal.valueOf(discount);
         }
 
@@ -112,12 +121,6 @@ public class OrderService {
         BigDecimal platformFeeRate = new BigDecimal("0.25");
         BigDecimal serviceFee = totalAmount.multiply(platformFeeRate);
         BigDecimal organizerAmount = totalAmount.subtract(serviceFee);
-
-        for (CartItem item : items) {
-            if (item.getTicketType().getEvent().getStatus() != EventStatus.OPENING) {
-                throw new AppException(ErrorCode.EVENT_NOT_OPENING);
-            }
-        }
 
         Order order = Order.builder()
                 .customer(user)
@@ -159,7 +162,7 @@ public class OrderService {
     }
 
     @Transactional
-    public void completePayment(Long orderId) {
+    public void completePayment(String orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -211,7 +214,7 @@ public class OrderService {
         }
     }
 
-    public byte[] getOrderInvoice(Long orderId) {
+    public byte[] getOrderInvoice(String orderId) {
         User user = getCurrentUser();
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));

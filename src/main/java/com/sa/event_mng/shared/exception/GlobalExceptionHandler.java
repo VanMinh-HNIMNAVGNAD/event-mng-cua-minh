@@ -20,9 +20,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     @SuppressWarnings("rawtypes")
     ResponseEntity<ApiResponse> handlingException(Exception ex) {
+        log.error("Unhandled exception: ", ex);
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage() + ": " + ex.getMessage());
         return ResponseEntity.badRequest().body(apiResponse);
     }
 

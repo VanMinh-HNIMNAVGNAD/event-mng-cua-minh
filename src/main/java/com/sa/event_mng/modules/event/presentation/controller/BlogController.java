@@ -8,11 +8,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/blog")
@@ -25,9 +25,12 @@ public class BlogController {
 
     @GetMapping("/news")
     @Operation(summary = "Lấy dữ liệu tin tức sự kiện cho trang Blog")
-    public ApiResponse<List<BlogEventResponse>> getBlogNews() {
-        return ApiResponse.<List<BlogEventResponse>>builder()
-                .result(eventService.getBlogNews())
+    public ApiResponse<Page<BlogEventResponse>> getBlogNews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ApiResponse.<Page<BlogEventResponse>>builder()
+                .result(eventService.getBlogNews(page, size))
                 .build();
     }
 }

@@ -42,7 +42,11 @@ public class VoucherService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         if (voucherRepository.findByCode(request.getCode()).isPresent()) {
-            throw new RuntimeException("Voucher code already exists");
+            throw new AppException(ErrorCode.VOUCHER_EXISTED);
+        }
+
+        if (request.getEndDate().isBefore(request.getStartDate().plusHours(1))) {
+            throw new AppException(ErrorCode.VOUCHER_DATE_INVALID);
         }
 
         Voucher voucher = voucherMapper.toVoucher(request);
@@ -54,7 +58,7 @@ public class VoucherService {
             
             if (creator.getRoles().stream().anyMatch(r -> r.getName().equals("ORGANIZER")) &&
                 !event.getOrganizer().getId().equals(creator.getId())) {
-                throw new RuntimeException("Not allowed to create voucher for this event");
+                throw new AppException(ErrorCode.VOUCHER_NOT_ALLOWED);
             }
             voucher.setEvent(event);
         }
@@ -63,12 +67,40 @@ public class VoucherService {
     }
 
     public Page<VoucherResponse> getAllVouchers(Pageable pageable) {
-        return voucherRepository.findAll(pageable).map(voucherMapper::toVoucherResponse);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ADMIN"));
+
+        if (isAdmin) {
+            return voucherRepository.findAll(pageable).map(voucherMapper::toVoucherResponse);
+        } else {
+            return voucherRepository.findByCreatorId(currentUser.getId(), pageable)
+                    .map(voucherMapper::toVoucherResponse);
+        }
     }
 
-    public Double calculateDiscount(String code, Double orderAmount, Long eventId) {
+    public Double calculateDiscount(String code, java.util.Map<?, Double> eventAmounts) {
+        System.out.println("DEBUG: Voucher Code: " + code);
+        System.out.println("DEBUG: Event Amounts Map: " + eventAmounts);
+
         Voucher voucher = voucherRepository.findByCode(code)
                 .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
+
+        // Convert keys to Long to handle potential Jackson type mismatch (String vs Long)
+        java.util.Map<Long, Double> normalizedAmounts = new java.util.HashMap<>();
+        eventAmounts.forEach((k, v) -> {
+            try {
+                Long id = Long.valueOf(k.toString());
+                normalizedAmounts.put(id, v);
+            } catch (Exception e) {
+                System.err.println("DEBUG: Failed to parse event ID: " + k);
+            }
+        });
+
+        Double totalOrderAmount = normalizedAmounts.values().stream().reduce(0.0, Double::sum);
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(voucher.getStartDate())) {
@@ -82,17 +114,44 @@ public class VoucherService {
             throw new AppException(ErrorCode.VOUCHER_OUT_OF_STOCK);
         }
 
-        if (voucher.getMinOrderAmount() != null && BigDecimal.valueOf(orderAmount).compareTo(voucher.getMinOrderAmount()) < 0) {
+        if (voucher.getMinOrderAmount() != null && BigDecimal.valueOf(totalOrderAmount).compareTo(voucher.getMinOrderAmount()) < 0) {
             throw new AppException(ErrorCode.VOUCHER_MIN_AMOUNT_NOT_MET);
         }
 
-        if (voucher.getEvent() != null && eventId != null && !voucher.getEvent().getId().equals(eventId)) {
-            throw new AppException(ErrorCode.VOUCHER_EVENT_MISMATCH);
+        Double applicableAmount = 0.0;
+        if (voucher.getEvent() != null) {
+            Long targetEventId = voucher.getEvent().getId();
+            applicableAmount = normalizedAmounts.getOrDefault(targetEventId, 0.0);
+            if (applicableAmount <= 0) {
+                throw new AppException(ErrorCode.VOUCHER_EVENT_MISMATCH);
+            }
+        } else {
+            // Check if events belong to the voucher creator
+            boolean isCreatorAdmin = voucher.getCreator().getRoles().stream()
+                    .anyMatch(r -> r.getName().equals("ADMIN"));
+            
+            for (java.util.Map.Entry<Long, Double> entry : normalizedAmounts.entrySet()) {
+                Long eventId = entry.getKey();
+                Double amount = entry.getValue();
+                
+                Event event = eventRepository.findById(eventId)
+                        .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
+                
+                if (isCreatorAdmin || event.getOrganizer().getId().equals(voucher.getCreator().getId())) {
+                    applicableAmount += amount;
+                }
+            }
+            
+            if (applicableAmount <= 0) {
+                throw new AppException(ErrorCode.VOUCHER_EVENT_MISMATCH);
+            }
         }
 
         BigDecimal discount = BigDecimal.ZERO;
         if ("PERCENTAGE".equalsIgnoreCase(voucher.getDiscountType())) {
-            discount = BigDecimal.valueOf(orderAmount).multiply(voucher.getAmount()).divide(BigDecimal.valueOf(100));
+            discount = BigDecimal.valueOf(applicableAmount)
+                    .multiply(voucher.getAmount())
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
             if (voucher.getMaxDiscount() != null && discount.compareTo(voucher.getMaxDiscount()) > 0) {
                 discount = voucher.getMaxDiscount();
             }
@@ -100,8 +159,8 @@ public class VoucherService {
             discount = voucher.getAmount();
         }
 
-        if (discount.compareTo(BigDecimal.valueOf(orderAmount)) > 0) {
-            discount = BigDecimal.valueOf(orderAmount);
+        if (discount.compareTo(BigDecimal.valueOf(applicableAmount)) > 0) {
+            discount = BigDecimal.valueOf(applicableAmount);
         }
 
         return discount.doubleValue();
@@ -116,5 +175,23 @@ public class VoucherService {
             voucher.setQuantity(voucher.getQuantity() - 1);
             voucherRepository.save(voucher);
         }
+    }
+
+    @Transactional
+    public void deleteVoucher(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
+        
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("ADMIN"));
+        
+        if (!isAdmin && !voucher.getCreator().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        voucherRepository.delete(voucher);
     }
 }

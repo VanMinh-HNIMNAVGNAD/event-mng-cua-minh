@@ -54,6 +54,9 @@ public enum ErrorCode {
 
     // Event errors (3001-3099)
     EVENT_NOT_FOUND(3001, "Event not found", HttpStatus.NOT_FOUND),
+    EVENT_SALE_PERIOD_INVALID(3002, "Thời gian kết thúc bán vé phải sau thời gian bắt đầu ít nhất 12 tiếng", HttpStatus.BAD_REQUEST),
+    EVENT_START_TIME_INVALID(3003, "Thời gian diễn ra sự kiện phải sau khi kết thúc bán vé ít nhất 1 ngày", HttpStatus.BAD_REQUEST),
+    EVENT_DURATION_INVALID(3004, "Thời gian kết thúc sự kiện phải diễn ra ít nhất 2 tiếng sau khi bắt đầu", HttpStatus.BAD_REQUEST),
 
     // FILE
     FILE_INPUT_ERR(4001, "Cannot store file", HttpStatus.BAD_REQUEST),
@@ -81,7 +84,10 @@ public enum ErrorCode {
     VOUCHER_NOT_ACTIVE(8003, "Mã giảm giá chưa đến thời gian sử dụng", HttpStatus.BAD_REQUEST),
     VOUCHER_OUT_OF_STOCK(8004, "Mã giảm giá đã hết lượt sử dụng", HttpStatus.BAD_REQUEST),
     VOUCHER_MIN_AMOUNT_NOT_MET(8005, "Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã này", HttpStatus.BAD_REQUEST),
-    VOUCHER_EVENT_MISMATCH(8006, "Mã giảm giá không áp dụng cho sự kiện này", HttpStatus.BAD_REQUEST);
+    VOUCHER_EVENT_MISMATCH(8006, "Mã giảm giá không áp dụng cho sự kiện này", HttpStatus.BAD_REQUEST),
+    VOUCHER_EXISTED(8007, "Mã giảm giá này đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_ALLOWED(8008, "Bạn không có quyền tạo mã cho sự kiện của người khác", HttpStatus.FORBIDDEN),
+    VOUCHER_DATE_INVALID(8009, "Ngày kết thúc phải sau ngày bắt đầu ít nhất 1 tiếng", HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;

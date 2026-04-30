@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     Optional<Voucher> findByCode(String code);
+    org.springframework.data.domain.Page<Voucher> findByCreatorId(Long creatorId, org.springframework.data.domain.Pageable pageable);
 }

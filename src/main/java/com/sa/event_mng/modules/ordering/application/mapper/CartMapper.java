@@ -36,6 +36,7 @@ public interface CartMapper {
     @Mapping(target = "eventName", source = "ticketType.event.name")
     @Mapping(target = "eventId", source = "ticketType.event.id")
     @Mapping(target = "eventImage", expression = "java(cartItem.getTicketType().getEvent().getImages() != null && !cartItem.getTicketType().getEvent().getImages().isEmpty() ? cartItem.getTicketType().getEvent().getImages().get(0).getImageUrl() : null)")
+    @Mapping(target = "saleEndDate", source = "ticketType.event.saleEndDate")
     CartItemResponse toCartItemResponse(CartItem cartItem);
 
     default BigDecimal calculateTotal(List<CartItem> items) {

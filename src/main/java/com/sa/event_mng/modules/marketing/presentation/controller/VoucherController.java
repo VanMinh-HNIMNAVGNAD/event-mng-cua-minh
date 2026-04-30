@@ -42,14 +42,19 @@ public class VoucherController {
                 .result(voucherService.getAllVouchers(pageRequest))
                 .build();
     }
-    @GetMapping("/validate")
+    @PostMapping("/validate")
     @Operation(summary = "Kiểm tra mã giảm giá")
     public ApiResponse<Double> validateVoucher(
-            @RequestParam String code,
-            @RequestParam Double amount,
-            @RequestParam(required = false) Long eventId) {
+            @RequestBody com.sa.event_mng.modules.marketing.application.dto.request.VoucherValidationRequest request) {
         return ApiResponse.<Double>builder()
-                .result(voucherService.calculateDiscount(code, amount, eventId))
+                .result(voucherService.calculateDiscount(request.getCode(), request.getEventAmounts()))
                 .build();
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa mã giảm giá (Chủ sở hữu/ADMIN)")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        voucherService.deleteVoucher(id);
+        return ApiResponse.<Void>builder().build();
     }
 }

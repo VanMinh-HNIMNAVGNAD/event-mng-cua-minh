@@ -17,4 +17,5 @@ public class CartItemResponse {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
+    private java.time.LocalDateTime saleEndDate;
 }
