@@ -1,13 +1,14 @@
 package com.sa.event_mng.modules.ordering.application.service;
 
 import com.sa.event_mng.modules.event.application.mapper.StatsMapper;
-import com.sa.event_mng.modules.ordering.domain.model.projection.EventRevenueStatsAdminProjection;
-import com.sa.event_mng.modules.ordering.domain.model.projection.EventRevenueStatsOrganizerProjection;
-import com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueProjection;
-import com.sa.event_mng.modules.ordering.domain.repository.StatisticsOrderRepository;
 import com.sa.event_mng.modules.ordering.application.dto.response.EventRevenueStatsAdminResponse;
-import com.sa.event_mng.modules.ordering.application.dto.response.EventRevenueStatsOrganizerResponse;
-import com.sa.event_mng.modules.ordering.application.dto.response.MonthlyRevenueResponse;
+import com.sa.event_mng.modules.ordering.application.dto.response.MonthlyRevenueOrganizerResponse;
+import com.sa.event_mng.modules.ordering.application.dto.response.OrganizerOverviewResponse;
+import com.sa.event_mng.modules.ordering.domain.model.projection.EventRevenueStatsAdminProjection;
+import com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueOrganizerProjection;
+import com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueProjection;
+import com.sa.event_mng.modules.ordering.domain.model.projection.OrganizerOverviewProjection;
+import com.sa.event_mng.modules.ordering.domain.repository.StatisticsOrderRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -15,7 +16,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,34 +27,59 @@ public class StatisticsRevenueService {
     StatisticsOrderRepository statisticsOrderRepository;
     StatsMapper statsMapper;
 
+//    @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
+//    public List<EventRevenueStatsOrganizerResponse> getEventRevenueStatsOrganizer(Long idOrganizer) {
+//        List<EventRevenueStatsOrganizerProjection> eventRevenueStats = statisticsOrderRepository.findEventRevenueOrganizerStats(idOrganizer);
+//        return eventRevenueStats.stream()
+//                .map(statsMapper::toEventRevenueStatsResponse)
+//                .toList();
+//    }
+
     @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
-    public List<EventRevenueStatsOrganizerResponse> getEventRevenueStatsOrganizer(Long idOrganizer) {
-        List<EventRevenueStatsOrganizerProjection> eventRevenueStats = statisticsOrderRepository.findEventRevenueOrganizerStats(idOrganizer);
-        return eventRevenueStats.stream()
-                .map(statsMapper::toEventRevenueStatsResponse)
-                .toList();
+    public OrganizerOverviewResponse getOrganizerOverview(Long idOrganizer) {
+        OrganizerOverviewProjection p = statisticsOrderRepository.findOrganizerOverview(idOrganizer);
+        return OrganizerOverviewResponse.builder()
+                .totalOrganizerAmount(p != null && p.getTotalOrganizerAmount() != null ? p.getTotalOrganizerAmount() : BigDecimal.ZERO)
+                .totalTicketsSold(p != null && p.getTotalTicketsSold() != null ? p.getTotalTicketsSold() : 0L)
+                .totalEvents(p != null && p.getTotalEvents() != null ? p.getTotalEvents() : 0L)
+                .totalServiceFee(p != null && p.getTotalServiceFee() != null ? p.getTotalServiceFee() : BigDecimal.ZERO)
+                .build();
+    }
+
+    @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
+    public MonthlyRevenueOrganizerResponse getMonthlyRevenueOrganizer(Long idOrganizer, int year) {
+        List<MonthlyRevenueOrganizerProjection> dbMonthly = statisticsOrderRepository.findMonthlyRevenueOrganizer(idOrganizer, year);
+
+        List<MonthlyRevenueOrganizerResponse.MonthlyDetail> monthlyList = new ArrayList<>();
+        for (int m = 1; m <= 12; m++) {
+            final int month = m;
+            BigDecimal rev = dbMonthly.stream()
+                    .filter(p -> p.getMonth() == month)
+                    .map(MonthlyRevenueOrganizerProjection::getRevenue)
+                    .findFirst().orElse(BigDecimal.ZERO);
+            monthlyList.add(MonthlyRevenueOrganizerResponse.MonthlyDetail.builder()
+                    .month(month).revenue(rev).build());
+        }
+
+        return MonthlyRevenueOrganizerResponse.builder().year(year).months(monthlyList).build();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public EventRevenueStatsAdminResponse getEventRevenueStatsAdmin() {
-        EventRevenueStatsAdminProjection totalStats = statisticsOrderRepository.findEventRevenueAdminStats();
-        List<MonthlyRevenueProjection> dbMonthly = statisticsOrderRepository.findMonthlyRevenueAdmin();
+    public EventRevenueStatsAdminResponse getEventServiceRevenueStatsAdmin(int year) {
+        EventRevenueStatsAdminProjection totalStats = statisticsOrderRepository.findEventRevenueAdminStats(year);
+        List<MonthlyRevenueProjection> dbMonthly = statisticsOrderRepository.findMonthlyRevenueAdmin(year);
 
-        List<MonthlyRevenueResponse> monthlyList = new ArrayList<>();
-        LocalDate now = LocalDate.now();
-        for (int i = 5; i >= 0; i--) {
-            LocalDate date = now.minusMonths(i);
-            int y = date.getYear();
-            int m = date.getMonthValue();
-
+        List<EventRevenueStatsAdminResponse.MonthlyRevenueResponse> monthlyList = new ArrayList<>();
+        for (int m = 1; m <= 12; m++) {
+            final int month = m;
             BigDecimal rev = dbMonthly.stream()
-                    .filter(p -> p.getYear() == y && p.getMonth() == m)
+                    .filter(p -> p.getMonth() == month)
                     .map(MonthlyRevenueProjection::getRevenue)
                     .findFirst().orElse(BigDecimal.ZERO);
 
-            monthlyList.add(MonthlyRevenueResponse.builder()
-                    .year(y)
-                    .month(m)
+            monthlyList.add(EventRevenueStatsAdminResponse.MonthlyRevenueResponse.builder()
+                    .year(year)
+                    .month(month)
                     .revenue(rev)
                     .build());
         }

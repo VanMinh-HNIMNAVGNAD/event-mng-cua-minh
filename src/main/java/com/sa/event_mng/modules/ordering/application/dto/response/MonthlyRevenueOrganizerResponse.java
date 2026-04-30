@@ -10,17 +10,16 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventRevenueStatsAdminResponse {
-    private BigDecimal totalRevenue;
-    private List<MonthlyRevenueResponse> monthlyRevenues;
+public class MonthlyRevenueOrganizerResponse {
+    private int year;
+    private List<MonthlyDetail> months;
 
     @Getter
     @Setter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MonthlyRevenueResponse {
-        private int year;
+    public static class MonthlyDetail {
         private int month;
         private BigDecimal revenue;
     }
