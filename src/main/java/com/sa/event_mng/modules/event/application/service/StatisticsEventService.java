@@ -24,6 +24,25 @@ public class StatisticsEventService {
     StatisticsEventRepository statisticsEventRepository;
     StatsMapper statsMapper;
 
+    @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
+    public EventYearlyOverviewResponse getEventYearlyOverview(Long idOrganizer, int year) {
+        List<EventYearlyOverviewProjection> projections = statisticsEventRepository.findEventYearlyOverview(idOrganizer, year);
+        List<EventYearlyOverviewResponse.EventSummary> events = projections.stream().map(p -> {
+            long sold = p.getTicketsSold() != null ? p.getTicketsSold() : 0L;
+            long total = p.getTotalQuantity() != null ? p.getTotalQuantity() : 0L;
+            double rate = total > 0 ? Math.round(sold * 10000.0 / total) / 100.0 : 0.0;
+            return EventYearlyOverviewResponse.EventSummary.builder()
+                    .eventName(p.getEventName())
+                    .status(p.getStatus())
+                    .ticketsSold(sold)
+                    .totalQuantity(total)
+                    .sellRate(rate)
+                    .organizerAmount(p.getOrganizerAmount())
+                    .build();
+        }).toList();
+        return EventYearlyOverviewResponse.builder().year(year).events(events).build();
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     public EventStatusStatsResponse getEventStatusStats(Long quarter, Long year) {
         List<EventStatusStatsProjection> eventStatusStatsProjections = statisticsEventRepository.findEventStatusStats(quarter, year);

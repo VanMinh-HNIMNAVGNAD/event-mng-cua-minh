@@ -42,4 +42,14 @@ public class StatisticsEventController {
         return ApiResponse.<TopEventQuarterResponse>builder().result(statisticsService.getTop5EventsByQuarter()).build();
     }
 
+    @GetMapping("/statistics-event/{id_organizer}/{year}/overview")
+    @Operation(summary = "Tổng quan các sự kiện trong năm (Organizer)")
+    public ApiResponse<EventYearlyOverviewResponse> getEventYearlyOverview(
+            @PathVariable("id_organizer") Long idOrganizer,
+            @PathVariable int year) {
+        return ApiResponse.<EventYearlyOverviewResponse>builder()
+                .result(statisticsService.getEventYearlyOverview(idOrganizer, year))
+                .build();
+    }
+
 }
