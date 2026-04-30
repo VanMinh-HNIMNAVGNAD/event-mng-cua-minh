@@ -1,7 +1,6 @@
 package com.sa.event_mng.modules.ordering.presentation.controller;
 
 import com.sa.event_mng.modules.ordering.application.dto.response.EventRevenueStatsAdminResponse;
-import com.sa.event_mng.modules.ordering.application.dto.response.EventRevenueStatsOrganizerResponse;
 import com.sa.event_mng.modules.ordering.application.dto.response.MonthlyRevenueOrganizerResponse;
 import com.sa.event_mng.modules.ordering.application.dto.response.OrganizerOverviewResponse;
 import com.sa.event_mng.modules.ordering.application.service.StatisticsRevenueService;
@@ -15,8 +14,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

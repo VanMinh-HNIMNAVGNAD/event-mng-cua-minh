@@ -1,6 +1,5 @@
 package com.sa.event_mng.modules.ordering.application.service;
 
-import com.sa.event_mng.modules.event.application.mapper.StatsMapper;
 import com.sa.event_mng.modules.ordering.application.dto.response.EventRevenueStatsAdminResponse;
 import com.sa.event_mng.modules.ordering.application.dto.response.MonthlyRevenueOrganizerResponse;
 import com.sa.event_mng.modules.ordering.application.dto.response.OrganizerOverviewResponse;
@@ -25,7 +24,7 @@ import java.util.List;
 public class StatisticsRevenueService {
 
     StatisticsOrderRepository statisticsOrderRepository;
-    StatsMapper statsMapper;
+    
 
 //    @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
 //    public List<EventRevenueStatsOrganizerResponse> getEventRevenueStatsOrganizer(Long idOrganizer) {

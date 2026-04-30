@@ -18,7 +18,7 @@ public class StaffCreateRequest {
     @NotBlank(message = "EMAIL_REQUIRED")
     private String email;
 
-    @Size(min = 8, message = "PASSWORD_INVALID")
+    @Size(min = 6, message = "PASSWORD_INVALID")
     @NotBlank(message = "PASSWORD_REQUIRED")
     private String password;
 

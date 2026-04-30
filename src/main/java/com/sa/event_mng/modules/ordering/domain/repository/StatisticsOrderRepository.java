@@ -2,7 +2,7 @@ package com.sa.event_mng.modules.ordering.domain.repository;
 
 import com.sa.event_mng.modules.ordering.domain.model.Order;
 import com.sa.event_mng.modules.ordering.domain.model.projection.EventRevenueStatsAdminProjection;
-import com.sa.event_mng.modules.ordering.domain.model.projection.EventRevenueStatsOrganizerProjection;
+
 import com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueProjection;
 import com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueOrganizerProjection;
 import com.sa.event_mng.modules.ordering.domain.model.projection.OrganizerOverviewProjection;
@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface StatisticsOrderRepository extends JpaRepository<Order, Long> {
+public interface StatisticsOrderRepository extends JpaRepository<Order, String> {
 
 //    @Query(value = """
 //    SELECT e.name as eventName,

@@ -18,7 +18,7 @@ import com.sa.event_mng.modules.ordering.domain.repository.OrderRepository;
 import com.sa.event_mng.modules.ordering.domain.repository.CartRepository;
 import com.sa.event_mng.modules.identity.domain.repository.UserRepository;
 import com.sa.event_mng.modules.event.domain.repository.TicketTypeRepository;
-import com.sa.event_mng.modules.event.domain.model.Event;
+
 import com.sa.event_mng.modules.event.domain.model.EventStatus;
 import com.sa.event_mng.modules.identity.domain.model.User;
 import com.sa.event_mng.modules.event.domain.model.TicketType;

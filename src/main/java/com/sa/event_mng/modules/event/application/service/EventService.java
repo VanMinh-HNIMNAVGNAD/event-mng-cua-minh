@@ -4,8 +4,8 @@ import com.sa.event_mng.modules.event.application.dto.request.EventRequest;
 import com.sa.event_mng.modules.event.application.dto.response.EventResponse;
 import com.sa.event_mng.modules.event.application.dto.response.OrganizerStatsResponse;
 import com.sa.event_mng.modules.event.application.dto.response.BlogEventResponse;
-import com.sa.event_mng.modules.event.domain.model.projection.MonthlyRevenueProjection;
 import com.sa.event_mng.modules.ordering.domain.repository.StatisticsOrderRepository;
+
 import com.sa.event_mng.shared.exception.AppException;
 import com.sa.event_mng.shared.exception.ErrorCode;
 import com.sa.event_mng.modules.event.application.mapper.EventMapper;
@@ -13,6 +13,7 @@ import com.sa.event_mng.modules.event.domain.model.*;
 import com.sa.event_mng.modules.event.domain.repository.*;
 import com.sa.event_mng.modules.identity.domain.model.User;
 import com.sa.event_mng.modules.identity.domain.repository.UserRepository;
+import com.sa.event_mng.modules.event.domain.repository.StatisticsEventRepository;
 import com.sa.event_mng.modules.event.infrastructure.specification.EventSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -45,6 +47,8 @@ public class EventService {
     UserRepository userRepository;
     EventMapper eventMapper;
     TicketTypeRepository ticketTypeRepository;
+    StatisticsOrderRepository statisticsOrderRepository;
+    StatisticsEventRepository statisticsEventRepository;
 
     @Value("${app.file.base-url}")
     @lombok.experimental.NonFinal
@@ -253,70 +257,68 @@ public class EventService {
     }
 
     public OrganizerStatsResponse getOrganizerStats() {
-//        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-//        User organizer = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-//
-//        List<Event> myEvents = eventRepository.findByOrganizerId(organizer.getId());
-//
-//        List<OrganizerStatsResponse.EventStat> eventStats = new ArrayList<>();
-//        double totalRev = 0;
-//        long totalSold = 0;
-//
-//        for (Event event : myEvents) {
-//            long sold = event.getTicketTypes().stream()
-//                    .mapToLong(tt -> tt.getTotalQuantity() - tt.getRemainingQuantity())
-//                    .sum();
-//
-//            double rev = event.getTicketTypes().stream()
-//                    .mapToDouble(tt -> (tt.getTotalQuantity() - tt.getRemainingQuantity()) * tt.getPrice().doubleValue())
-//                    .sum();
-//
-//            long totalTickets = event.getTicketTypes().stream()
-//                    .mapToLong(tt -> tt.getTotalQuantity())
-//                    .sum();
-//
-//            eventStats.add(OrganizerStatsResponse.EventStat.builder()
-//                    .eventId(event.getId())
-//                    .eventName(event.getName())
-//                    .totalTickets(totalTickets)
-//                    .ticketsSold(sold)
-//                    .revenue(rev)
-//                    .sellThroughRate(totalTickets > 0 ? (double) sold / totalTickets * 100 : 0)
-//                    .status(event.getStatus().name())
-//                    .imageUrl(event.getImages() != null && !event.getImages().isEmpty() ? event.getImages().get(0).getImageUrl() : null)
-//                    .build());
-//
-//            totalRev += rev;
-//            totalSold += sold;
-//        }
-//
-//        List<MonthlyRevenueProjection> dbStats = statisticsEventRepository.findMonthlyRevenueOrganizer(organizer.getId());
-//        List<OrganizerStatsResponse.MonthlyRevenue> monthlyRevenues = new ArrayList<>();
-//        LocalDate now = LocalDate.now();
-//
-//        for (int i = 5; i >= 0; i--) {
-//            LocalDate date = now.minusMonths(i);
-//            int year = date.getYear();
-//            int month = date.getMonthValue();
-//
-//            java.math.BigDecimal monthlyRev = dbStats.stream()
-//                    .filter(p -> p.getYear() == year && p.getMonth() == month)
-//                    .map(MonthlyRevenueProjection::getRevenue)
-//                    .findFirst()
-//                    .orElse(java.math.BigDecimal.ZERO);
-//
-//            monthlyRevenues.add(new OrganizerStatsResponse.MonthlyRevenue(year, month, monthlyRev));
-//        }
-//
-//        return OrganizerStatsResponse.builder()
-//                .totalEvents(myEvents.size())
-//                .totalTicketsSold(totalSold)
-//                .totalRevenue(totalRev)
-//                .eventStats(eventStats)
-//                .monthlyRevenues(monthlyRevenues)
-//                .build();
-        return null;
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        List<Event> myEvents = eventRepository.findByOrganizerId(organizer.getId());
+
+        List<OrganizerStatsResponse.EventStat> eventStats = new ArrayList<>();
+        double totalRev = 0;
+        long totalSold = 0;
+
+        for (Event event : myEvents) {
+            long sold = event.getTicketTypes().stream()
+                    .mapToLong(tt -> tt.getTotalQuantity() - tt.getRemainingQuantity())
+                    .sum();
+
+            double rev = event.getTicketTypes().stream()
+                    .mapToDouble(tt -> (tt.getTotalQuantity() - tt.getRemainingQuantity()) * tt.getPrice().doubleValue())
+                    .sum();
+
+            long totalTickets = event.getTicketTypes().stream()
+                    .mapToLong(tt -> tt.getTotalQuantity())
+                    .sum();
+
+            eventStats.add(OrganizerStatsResponse.EventStat.builder()
+                    .eventId(event.getId())
+                    .eventName(event.getName())
+                    .totalTickets(totalTickets)
+                    .ticketsSold(sold)
+                    .revenue(rev)
+                    .sellThroughRate(totalTickets > 0 ? (double) sold / totalTickets * 100 : 0)
+                    .status(event.getStatus().name())
+                    .imageUrl(event.getImages() != null && !event.getImages().isEmpty() ? event.getImages().get(0).getImageUrl() : null)
+                    .build());
+
+            totalRev += rev;
+            totalSold += sold;
+        }
+
+        int currentYear = LocalDate.now().getYear();
+        List<com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueOrganizerProjection> dbStats = 
+                statisticsOrderRepository.findMonthlyRevenueOrganizer(organizer.getId(), currentYear);
+        
+        List<OrganizerStatsResponse.MonthlyRevenue> monthlyRevenues = new ArrayList<>();
+        
+        for (int m = 1; m <= 12; m++) {
+            final int month = m;
+            java.math.BigDecimal monthlyRev = dbStats.stream()
+                    .filter(p -> p.getMonth() == month)
+                    .map(com.sa.event_mng.modules.ordering.domain.model.projection.MonthlyRevenueOrganizerProjection::getRevenue)
+                    .findFirst()
+                    .orElse(java.math.BigDecimal.ZERO);
+
+            monthlyRevenues.add(new OrganizerStatsResponse.MonthlyRevenue(currentYear, month, monthlyRev));
+        }
+
+        return OrganizerStatsResponse.builder()
+                .totalEvents(myEvents.size())
+                .totalTicketsSold(totalSold)
+                .totalRevenue(totalRev)
+                .eventStats(eventStats)
+                .monthlyRevenues(monthlyRevenues)
+                .build();
     }
 
     public Page<BlogEventResponse> getBlogNews(int page, int size) {

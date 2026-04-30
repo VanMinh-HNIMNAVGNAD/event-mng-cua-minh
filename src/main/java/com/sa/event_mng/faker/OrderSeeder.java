@@ -37,7 +37,7 @@ public class OrderSeeder {
                 Order order = new Order();
                 order.setCustomer(customer);
                 order.setOrderStatus(OrderStatus.CONFIRMED);
-                order.setPaymentMethod(random.nextBoolean() ? PaymentMethod.BANKING : PaymentMethod.MOMO);
+                order.setPaymentMethod(random.nextBoolean() ? PaymentMethod.VNPAY : PaymentMethod.MOMO);
                 order.setPaymentStatus(PaymentStatus.PAID);
                 BigDecimal totalAmount = BigDecimal.valueOf(100_000 + random.nextInt(4_900_001));
                 BigDecimal serviceFee = totalAmount.multiply(BigDecimal.valueOf(0.25));

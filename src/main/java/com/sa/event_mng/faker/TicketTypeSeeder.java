@@ -29,7 +29,7 @@ public class TicketTypeSeeder {
         List<Event> events = eventRepository.findAll();
         if (events.isEmpty()) return;
 
-        int created = 0;
+
         for (Event event : events) {
             int numberOfTypes = random.nextInt(3) + 1;
             for (int i = 0; i < numberOfTypes; i++) {

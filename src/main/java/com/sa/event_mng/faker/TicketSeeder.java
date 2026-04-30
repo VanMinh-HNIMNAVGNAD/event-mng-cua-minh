@@ -24,7 +24,7 @@ public class TicketSeeder {
         List<OrderItem> items = orderItemRepository.findAll();
         if (items.isEmpty()) return;
 
-        int created = 0;
+
         for (OrderItem item : items) {
             for (int i = 0; i < item.getQuantity(); i++) {
                 Ticket ticket = Ticket.builder()
