@@ -194,4 +194,19 @@ public class VoucherService {
         
         voucherRepository.delete(voucher);
     }
+
+    public java.util.List<VoucherResponse> getActiveVouchersForEvent(Long eventId) {
+        System.out.println("DEBUG: Fetching vouchers for event ID: " + eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
+        
+        System.out.println("DEBUG: Event Organizer ID: " + event.getOrganizer().getId());
+        
+        java.util.List<Voucher> vouchers = voucherRepository.findActiveVouchersForEvent(eventId, event.getOrganizer().getId(), LocalDateTime.now());
+        System.out.println("DEBUG: Found " + vouchers.size() + " active vouchers");
+        
+        return vouchers.stream()
+                .map(voucherMapper::toVoucherResponse)
+                .toList();
+    }
 }

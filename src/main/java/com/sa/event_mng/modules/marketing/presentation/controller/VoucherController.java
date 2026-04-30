@@ -57,4 +57,12 @@ public class VoucherController {
         voucherService.deleteVoucher(id);
         return ApiResponse.<Void>builder().build();
     }
+
+    @GetMapping("/event/{eventId}")
+    @Operation(summary = "Lấy mã giảm giá khả dụng cho sự kiện")
+    public ApiResponse<java.util.List<VoucherResponse>> getByEvent(@PathVariable Long eventId) {
+        return ApiResponse.<java.util.List<VoucherResponse>>builder()
+                .result(voucherService.getActiveVouchersForEvent(eventId))
+                .build();
+    }
 }

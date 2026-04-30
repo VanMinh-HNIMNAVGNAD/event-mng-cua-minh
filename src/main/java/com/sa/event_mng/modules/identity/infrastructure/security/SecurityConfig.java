@@ -41,7 +41,8 @@ public class SecurityConfig {
       "/images/**",
       "/v3/api-docs/**",
       "/swagger-ui/**",
-      "/swagger-ui.html"
+      "/swagger-ui.html",
+      "/vouchers/**"
   };
 
   @Value("${application.security.jwt.secret-key}")
