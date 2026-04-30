@@ -2,6 +2,7 @@ package com.sa.event_mng.modules.event.application.service;
 
 import com.sa.event_mng.modules.event.application.dto.response.*;
 import com.sa.event_mng.modules.event.application.mapper.StatsMapper;
+import com.sa.event_mng.modules.event.domain.model.projection.*;
 import com.sa.event_mng.modules.event.domain.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +10,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,14 +19,14 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class StatisticsService {
+public class StatisticsEventService {
 
-    StatisticsRepository statisticsRepository;
+    StatisticsEventRepository statisticsEventRepository;
     StatsMapper statsMapper;
 
     @PreAuthorize("hasRole('ADMIN')")
     public EventStatusStatsResponse getEventStatusStats(Long quarter, Long year) {
-        List<EventStatusStatsProjection> eventStatusStatsProjections = statisticsRepository.findEventStatusStats(quarter, year);
+        List<EventStatusStatsProjection> eventStatusStatsProjections = statisticsEventRepository.findEventStatusStats(quarter, year);
         long total = eventStatusStatsProjections.stream()
                 .mapToLong(EventStatusStatsProjection::getCount)
                 .sum();
@@ -61,8 +60,7 @@ public class StatisticsService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public EventTemporalStatsResponse getEventTemporalStats(int dayOfWeek) {
-
-        List<EventTemporalStatsProjection> eventTemporalStatsProjection = statisticsRepository.findEventTemporalStats(dayOfWeek);
+        List<EventTemporalStatsProjection> eventTemporalStatsProjection = statisticsEventRepository.findEventTemporalStats(dayOfWeek);
 
         Map<Integer, Double> dataByHour = eventTemporalStatsProjection.stream()
                 .collect(Collectors.toMap(
@@ -76,47 +74,31 @@ public class StatisticsService {
                         dataByHour.getOrDefault(h, 0.0)
                 ))
                 .toList();
+
         return EventTemporalStatsResponse.builder()
                 .day(dayOfWeekMap.get(dayOfWeek))
                 .eventTemporalStatsDetail(eventTemporalStatsDetails)
                 .build();
     }
 
-    @PreAuthorize("hasRole('ORGANIZER') and @securityCustom.isCurrentUser(#idOrganizer, authentication)")
-    public List<EventRevenueStatsOrganizerResponse> getEventRevenueStatsOrganizer(Long idOrganizer) {
-        List<EventRevenueStatsOrganizerProjection> eventRevenueStats = statisticsRepository.findEventRevenueOrganizerStats(idOrganizer);
-        return eventRevenueStats.stream()
-                .map(statsMapper::toEventRevenueStatsResponse)
-                .toList();
-    }
-
     @PreAuthorize("hasRole('ADMIN')")
-    public EventRevenueStatsAdminResponse getEventRevenueStatsAdmin() {
-        EventRevenueStatsAdminProjection totalStats = statisticsRepository.findEventRevenueAdminStats();
-        List<MonthlyRevenueProjection> dbMonthly = statisticsRepository.findMonthlyRevenueAdmin();
-        
-        List<MonthlyRevenueResponse> monthlyList = new ArrayList<>();
+    public TopEventQuarterResponse getTop5EventsByQuarter() {
         LocalDate now = LocalDate.now();
-        for (int i = 5; i >= 0; i--) {
-            LocalDate date = now.minusMonths(i);
-            int y = date.getYear();
-            int m = date.getMonthValue();
-            
-            BigDecimal rev = dbMonthly.stream()
-                .filter(p -> p.getYear() == y && p.getMonth() == m)
-                .map(MonthlyRevenueProjection::getRevenue)
-                .findFirst().orElse(BigDecimal.ZERO);
-            
-            monthlyList.add(MonthlyRevenueResponse.builder()
-                            .year(y)
-                            .month(m)
-                            .revenue(rev)
-                            .build());
-        }
-
-        return EventRevenueStatsAdminResponse.builder()
-                .totalRevenue(totalStats != null ? totalStats.getTotalRevenue() : BigDecimal.ZERO)
-                .monthlyRevenues(monthlyList)
+        int quarter = (now.getMonthValue() - 1) / 3 + 1;
+        int year = now.getYear();
+        List<TopEventQuarterResponse.EventItem> events = statisticsEventRepository.findTop5EventsByQuarter(quarter, year).stream()
+                .map(p -> TopEventQuarterResponse.EventItem.builder()
+                        .eventName(p.getEventName())
+                        .ticketsSold(p.getTicketsSold())
+                        .occupancyRate(p.getOccupancyRate())
+                        .totalRevenue(p.getTotalRevenue())
+                        .status(p.getStatus())
+                        .build())
+                .toList();
+        return TopEventQuarterResponse.builder()
+                .quarter(quarter)
+                .year(year)
+                .events(events)
                 .build();
     }
 }

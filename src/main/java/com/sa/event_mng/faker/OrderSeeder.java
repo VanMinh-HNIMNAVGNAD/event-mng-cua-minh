@@ -39,9 +39,11 @@ public class OrderSeeder {
                 order.setOrderStatus(OrderStatus.CONFIRMED);
                 order.setPaymentMethod(random.nextBoolean() ? PaymentMethod.BANKING : PaymentMethod.MOMO);
                 order.setPaymentStatus(PaymentStatus.PAID);
-                order.setTotalAmount(BigDecimal.ZERO);
-                order.setServiceFee(BigDecimal.ZERO);
-                order.setOrganizerAmount(BigDecimal.ZERO);
+                BigDecimal totalAmount = BigDecimal.valueOf(100_000 + random.nextInt(4_900_001));
+                BigDecimal serviceFee = totalAmount.multiply(BigDecimal.valueOf(0.25));
+                order.setTotalAmount(totalAmount);
+                order.setServiceFee(serviceFee);
+                order.setOrganizerAmount(totalAmount.subtract(serviceFee));
                 order.setPlatformFeeRate(0.05f);
                 order.setOrderDate(LocalDateTime.now().minusDays(random.nextInt(30)));
                 order.setPaidAt(LocalDateTime.now().minusDays(random.nextInt(29)));
