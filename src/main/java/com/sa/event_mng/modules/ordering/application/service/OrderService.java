@@ -1,5 +1,6 @@
 package com.sa.event_mng.modules.ordering.application.service;
 
+import com.sa.event_mng.modules.event.domain.model.Event;
 import com.sa.event_mng.modules.ordering.application.dto.response.OrderResponse;
 import com.sa.event_mng.shared.exception.AppException;
 import com.sa.event_mng.shared.exception.ErrorCode;

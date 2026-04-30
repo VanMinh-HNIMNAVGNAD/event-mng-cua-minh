@@ -17,9 +17,6 @@ public class EventTemporalStatsResponse {
     @AllArgsConstructor
     public static class EventTemporalStatsDetail {
         private Integer hourOfDay;
-        private Long countEvents;
-        private Long totalTickets;
-        private Long ticketsSold;
         private Double percentageOfTicketsSold;
     }
 }

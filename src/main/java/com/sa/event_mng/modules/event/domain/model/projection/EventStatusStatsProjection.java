@@ -1,4 +1,4 @@
-package com.sa.event_mng.model.projection;
+package com.sa.event_mng.modules.event.domain.model.projection;
 
 public interface EventStatusStatsProjection {
     String getStatus();

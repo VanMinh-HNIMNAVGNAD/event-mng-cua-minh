@@ -22,17 +22,22 @@
 //        return args -> {
 //            System.out.println("=== START SEED DATABASE ===");
 //
-//            categorySeeder.seed();
-//            userSeeder.seed();
-//            eventSeeder.seed();
-//            ticketTypeSeeder.seed();
-//            cartSeeder.seed();
-//            cartItemSeeder.seed();
-//            orderSeeder.seed();
-//            orderItemSeeder.seed();
-//            ticketSeeder.seed();
+//            seedAndLog("CategorySeeder", categorySeeder::seed);
+//            seedAndLog("UserSeeder", userSeeder::seed);
+//            seedAndLog("EventSeeder", eventSeeder::seed);
+//            seedAndLog("TicketTypeSeeder", ticketTypeSeeder::seed);
+//            seedAndLog("CartSeeder", cartSeeder::seed);
+//            seedAndLog("CartItemSeeder", cartItemSeeder::seed);
+//            seedAndLog("OrderSeeder", orderSeeder::seed);
+//            seedAndLog("OrderItemSeeder", orderItemSeeder::seed);
+//            seedAndLog("TicketSeeder", ticketSeeder::seed);
 //
 //            System.out.println("=== END SEED DATABASE ===");
 //        };
+//    }
+//
+//    private void seedAndLog(String seedName, Runnable seedAction) {
+//        seedAction.run();
+//        System.out.println("=== " + seedName + " SEED SUCCESS ===");
 //    }
 //}
