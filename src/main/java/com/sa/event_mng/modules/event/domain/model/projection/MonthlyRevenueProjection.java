@@ -1,4 +1,4 @@
-package com.sa.event_mng.modules.event.domain.repository;
+package com.sa.event_mng.modules.event.domain.model.projection;
 
 import java.math.BigDecimal;
 

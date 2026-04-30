@@ -35,7 +35,7 @@ public class UserSeeder {
             return;
         }
 
-        Role staffRole = roleRepository.findById("STAFF").orElseThrow();
+        Role staffRole = roleRepository.findByName("STAFF");
         Set<Role> roles = new HashSet<>();
         roles.add(staffRole);
 
