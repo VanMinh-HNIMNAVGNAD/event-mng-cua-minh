@@ -13,7 +13,6 @@ import com.sa.event_mng.modules.event.domain.model.*;
 import com.sa.event_mng.modules.event.domain.repository.*;
 import com.sa.event_mng.modules.identity.domain.model.User;
 import com.sa.event_mng.modules.identity.domain.repository.UserRepository;
-import com.sa.event_mng.modules.event.domain.repository.StatisticsEventRepository;
 import com.sa.event_mng.modules.event.infrastructure.specification.EventSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +47,6 @@ public class EventService {
     EventMapper eventMapper;
     TicketTypeRepository ticketTypeRepository;
     StatisticsOrderRepository statisticsOrderRepository;
-    StatisticsEventRepository statisticsEventRepository;
-
     @Value("${app.file.base-url}")
     @lombok.experimental.NonFinal
     String fileBaseUrl;
