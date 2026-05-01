@@ -114,11 +114,11 @@ public class EventController {
 
 //        @GetMapping("/blog-news")
 //        @Operation(summary = "Lấy dữ liệu đồng bộ cho trang Blog tin tức")
-//        public ApiResponse<Page<BlogEventResponse>> getBlogNews(
+//        public ApiResponse<Page<com.sa.event_mng.modules.event.application.dto.response.BlogEventResponse>> getBlogNews(
 //                @RequestParam(defaultValue = "0") int page,
 //                @RequestParam(defaultValue = "10") int size
 //        ) {
-//                return ApiResponse.<Page<BlogEventResponse>>builder()
+//                return ApiResponse.<Page<com.sa.event_mng.modules.event.application.dto.response.BlogEventResponse>>builder()
 //                                .result(eventService.getBlogNews(page, size))
 //                                .build();
 //        }
