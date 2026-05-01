@@ -3,7 +3,6 @@ package com.sa.event_mng.modules.event.application.service;
 import com.sa.event_mng.modules.event.application.dto.request.EventRequest;
 import com.sa.event_mng.modules.event.application.dto.response.EventResponse;
 import com.sa.event_mng.modules.event.application.dto.response.OrganizerStatsResponse;
-import com.sa.event_mng.modules.event.application.dto.response.BlogEventResponse;
 import com.sa.event_mng.modules.ordering.domain.repository.StatisticsOrderRepository;
 
 import com.sa.event_mng.shared.exception.AppException;
@@ -318,49 +317,4 @@ public class EventService {
                 .build();
     }
 
-    public Page<BlogEventResponse> getBlogNews(int page, int size) {
-        LocalDateTime now = LocalDateTime.now();
-        PageRequest pageRequest = PageRequest.of(page, size);
-
-        // Chỉ lấy các sự kiện đã được phê duyệt (UPCOMING, OPENING, CLOSED)
-        List<EventStatus> activeStatuses = List.of(
-                EventStatus.UPCOMING,
-                EventStatus.OPENING,
-                EventStatus.CLOSED
-        );
-
-        Specification<Event> spec = (root, query, cb) -> {
-            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
-            
-            // Lọc theo trạng thái active
-            predicates.add(root.get("status").in(activeStatuses));
-            
-            // Lọc: thời gian hiện tại <= thời gian kết thúc bán vé
-            predicates.add(cb.or(
-                cb.isNull(root.get("saleEndDate")),
-                cb.greaterThanOrEqualTo(root.get("saleEndDate"), now)
-            ));
-
-            query.orderBy(cb.asc(root.get("startTime")));
-            
-            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
-        };
-
-        return eventRepository.findAll(spec, pageRequest).map(e -> BlogEventResponse.builder()
-                .id(e.getId())
-                .name(e.getName())
-                .location(e.getLocation())
-                .province(e.getProvince())
-                .startTime(e.getStartTime())
-                .endTime(e.getEndTime())
-                .saleStartDate(e.getSaleStartDate())
-                .saleEndDate(e.getSaleEndDate())
-                .descriptionStatus(e.getDescription() != null && !e.getDescription().isBlank()
-                        ? "Mô tả: " + e.getDescription() : "")
-                .categoryName(e.getCategory() != null ? e.getCategory().getName() : "")
-                .imageUrl(e.getImages() != null && !e.getImages().isEmpty()
-                        ? e.getImages().get(0).getImageUrl() : null)
-                .build()
-        );
-    }
 }

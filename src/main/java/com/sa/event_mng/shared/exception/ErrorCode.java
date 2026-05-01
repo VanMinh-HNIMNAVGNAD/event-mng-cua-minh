@@ -87,7 +87,12 @@ public enum ErrorCode {
     VOUCHER_EVENT_MISMATCH(8006, "Mã giảm giá không áp dụng cho sự kiện này", HttpStatus.BAD_REQUEST),
     VOUCHER_EXISTED(8007, "Mã giảm giá này đã tồn tại trong hệ thống", HttpStatus.BAD_REQUEST),
     VOUCHER_NOT_ALLOWED(8008, "Bạn không có quyền tạo mã cho sự kiện của người khác", HttpStatus.FORBIDDEN),
-    VOUCHER_DATE_INVALID(8009, "Ngày kết thúc phải sau ngày bắt đầu ít nhất 1 tiếng", HttpStatus.BAD_REQUEST);
+    VOUCHER_DATE_INVALID(8009, "Ngày kết thúc phải sau ngày bắt đầu ít nhất 1 tiếng", HttpStatus.BAD_REQUEST),
+
+    // Blog errors (9001-9099)
+    BLOG_POST_NOT_FOUND(9001, "Bài viết không tồn tại", HttpStatus.NOT_FOUND),
+    BLOG_TAG_EXISTED(9002, "Tag này đã tồn tại", HttpStatus.BAD_REQUEST),
+    BLOG_POST_ALREADY_PUBLISHED(9003, "Không thể sửa/xóa bài viết đã được xuất bản", HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;
