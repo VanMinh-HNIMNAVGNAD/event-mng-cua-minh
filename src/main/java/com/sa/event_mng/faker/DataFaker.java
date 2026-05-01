@@ -19,7 +19,9 @@
 //            CartItemSeeder cartItemSeeder,
 //            OrderSeeder orderSeeder,
 //            OrderItemSeeder orderItemSeeder,
-//            TicketSeeder ticketSeeder
+//            TicketSeeder ticketSeeder,
+//            BlogTagSeeder blogTagSeeder,
+//            BlogPostSeeder blogPostSeeder
 //    ) {
 //        return args -> {
 //            System.out.println("=== START SEED DATABASE ===");
@@ -33,6 +35,8 @@
 //            seedAndLog("OrderSeeder", orderSeeder::seed);
 //            seedAndLog("OrderItemSeeder", orderItemSeeder::seed);
 //            seedAndLog("TicketSeeder", ticketSeeder::seed);
+//            seedAndLog("BlogTagSeeder", blogTagSeeder::seed);
+//            seedAndLog("BlogPostSeeder", blogPostSeeder::seed);
 //
 //            System.out.println("=== END SEED DATABASE ===");
 //        };
