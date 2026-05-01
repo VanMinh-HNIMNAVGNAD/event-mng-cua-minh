@@ -54,6 +54,15 @@ public class OrderController {
         return new org.springframework.http.ResponseEntity<>(pdf, headers, org.springframework.http.HttpStatus.OK);
     }
 
+    @PostMapping("/cancel-and-restore-cart")
+    @Operation(summary = "Hủy đơn hàng và hoàn tác các mục về giỏ hàng")
+    public ApiResponse<Void> cancelAndRestoreCart(@RequestParam Long orderCode) {
+        orderService.cancelAndRestoreCart(orderCode);
+        return ApiResponse.<Void>builder()
+                .message("Đã hoàn tác giỏ hàng")
+                .build();
+    }
+
     @GetMapping
     @Operation(summary = "Xem lịch sử đơn hàng của tôi")
     public ApiResponse<Page<OrderResponse>> getMyOrders(@RequestParam(defaultValue = "1") int page,
