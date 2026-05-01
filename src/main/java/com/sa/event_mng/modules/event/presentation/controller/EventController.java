@@ -128,14 +128,14 @@ public class EventController {
                                 .build();
         }
 
-        @GetMapping("/blog-news")
-        @Operation(summary = "Lấy dữ liệu đồng bộ cho trang Blog tin tức")
-        public ApiResponse<Page<BlogEventResponse>> getBlogNews(
-                @RequestParam(defaultValue = "0") int page,
-                @RequestParam(defaultValue = "10") int size
-        ) {
-                return ApiResponse.<Page<BlogEventResponse>>builder()
-                                .result(eventService.getBlogNews(page, size))
-                                .build();
-        }
+//        @GetMapping("/blog-news")
+//        @Operation(summary = "Lấy dữ liệu đồng bộ cho trang Blog tin tức")
+//        public ApiResponse<Page<BlogEventResponse>> getBlogNews(
+//                @RequestParam(defaultValue = "0") int page,
+//                @RequestParam(defaultValue = "10") int size
+//        ) {
+//                return ApiResponse.<Page<BlogEventResponse>>builder()
+//                                .result(eventService.getBlogNews(page, size))
+//                                .build();
+//        }
 }
