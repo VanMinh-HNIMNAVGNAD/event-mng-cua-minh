@@ -82,15 +82,19 @@ public class EmailService {
             }
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            log.info("Đang gửi mail tới {} qua Brevo API...", to);
             ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Đã gửi email thành công tới: {}", to);
             } else {
-                log.error("Lỗi gửi email qua API Brevo: {}", response.getBody());
+                log.error("Lỗi gửi email qua API Brevo. Mã lỗi: {}. Chi tiết: {}", response.getStatusCode(), response.getBody());
             }
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.error("Lỗi HTTP từ Brevo API: {}. Nội dung: {}", e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("KHÔNG THỂ GỬI EMAIL QUA API! Lỗi: {}", e.getMessage());
+            e.printStackTrace();
         }
     }
 }

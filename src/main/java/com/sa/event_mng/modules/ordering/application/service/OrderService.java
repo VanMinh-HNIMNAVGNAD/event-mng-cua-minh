@@ -248,7 +248,7 @@ public class OrderService {
             orderRepository.save(order);
 
             // Fetch order with all relations to avoid LazyInitializationException in Email/Pdf service
-            Order fullOrder = orderRepository.findById(order.getId()).orElse(order);
+            Order fullOrder = orderRepository.findByIdWithTickets(order.getId()).orElse(order);
             
             if (fullOrder.getCustomer().getEmail() != null) {
                 try {
