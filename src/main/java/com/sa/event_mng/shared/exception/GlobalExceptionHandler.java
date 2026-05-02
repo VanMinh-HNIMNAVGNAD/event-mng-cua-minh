@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
-    @SuppressWarnings("rawtypes")
     ResponseEntity<ApiResponse> handlingException(Exception ex) {
         log.error("Unhandled exception: ", ex);
         ApiResponse apiResponse = new ApiResponse();
@@ -28,7 +27,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = AppException.class)
-    @SuppressWarnings("rawtypes")
     ResponseEntity<ApiResponse> handlingAppException(AppException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         ApiResponse apiResponse = new ApiResponse();
@@ -40,7 +38,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = DisabledException.class)
-    @SuppressWarnings("rawtypes")
     ResponseEntity<ApiResponse> handlingDisabledException(DisabledException ex) {
         ErrorCode errorCode = ErrorCode.USER_DISABLED;
         ApiResponse apiResponse = new ApiResponse();
@@ -50,7 +47,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = AccessDeniedException.class)
-    @SuppressWarnings("rawtypes")
     ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException ex) {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
         return ResponseEntity.status(errorCode.getStatusCode())

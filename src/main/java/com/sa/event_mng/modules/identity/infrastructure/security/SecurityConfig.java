@@ -30,7 +30,8 @@ public class SecurityConfig {
       "/auth/refresh",
       "/auth/introspect",
       "/auth/forgot-password",
-      "/auth/reset-password"
+      "/auth/reset-password",
+      "/api/v1/payments/payos-webhook"
   };
 
   private final String[] PUBLIC_GET_ENDPOINTS = {
