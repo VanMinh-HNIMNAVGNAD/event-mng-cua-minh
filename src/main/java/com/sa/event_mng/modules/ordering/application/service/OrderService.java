@@ -172,6 +172,12 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         OrderResponse response = orderMapper.toOrderResponse(savedOrder);
 
+        // Simulation for MoMo: Complete immediately
+        if (paymentMethod == PaymentMethod.MOMO) {
+            this.completePayment(savedOrder.getId());
+            response.setPaymentUrl("/payment/success?orderCode=" + savedOrder.getOrderCode());
+        }
+
         if (paymentMethod == PaymentMethod.PAYOS) {
             try {
                 String paymentUrl = paymentService.createPayOSPaymentLink(savedOrder);
