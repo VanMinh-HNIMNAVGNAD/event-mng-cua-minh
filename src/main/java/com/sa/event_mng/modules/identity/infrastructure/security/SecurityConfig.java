@@ -40,6 +40,7 @@ public class SecurityConfig {
       "/events/**",
       "/blog/**",
       "/api/v1/payments/payos-webhook",
+      "/api/v1/payments/redirect",
       "/images/**",
       "/v3/api-docs/**",
       "/swagger-ui/**",

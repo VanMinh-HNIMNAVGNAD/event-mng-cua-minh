@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Map;
+import java.net.URI;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,27 +27,56 @@ public class PaymentController {
 
     OrderService orderService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.payment.deep-link.scheme}")
+    @lombok.experimental.NonFinal
+    String deepLinkScheme;
+
+    @org.springframework.beans.factory.annotation.Value("${app.payment.deep-link.host}")
+    @lombok.experimental.NonFinal
+    String deepLinkHost;
+
+    @org.springframework.beans.factory.annotation.Value("${app.payment.deep-link.path}")
+    @lombok.experimental.NonFinal
+    String deepLinkPath;
+
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return "success";
+        }
+
+        String normalized = status.trim().toLowerCase();
+        return switch (normalized) {
+            case "paid", "success" -> "success";
+            case "canceled", "cancelled", "cancel" -> "cancel";
+            default -> normalized;
+        };
+    }
+
     @org.springframework.web.bind.annotation.GetMapping("/payos-webhook")
     public String validateWebhook() {
         return "Webhook is active!";
     }
 
     @GetMapping("/redirect")
-    public ResponseEntity<String> redirectToDeepLink(@RequestParam(name = "orderCode") Long orderCode,
-                                                     @RequestParam(name = "status", required = false, defaultValue = "success") String status) {
+    public ResponseEntity<Void> redirectToDeepLink(@RequestParam(name = "orderCode") Long orderCode,
+                                                   @RequestParam(name = "status", required = false, defaultValue = "success") String status) {
         try {
-            String deepLink = "customer://payment-status?orderId=" + orderCode + "&status=" + status;
+            String normalizedStatus = normalizeStatus(status);
 
-            String html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'/>"
-                    + "<meta http-equiv='refresh' content='0;url=" + deepLink + "'/>"
-                    + "<script>window.location='" + deepLink + "';</script></head><body>"
-                    + "<p>If you are not redirected, <a href='" + deepLink + "'>click here</a>.</p></body></html>";
+            if ("success".equals(normalizedStatus)) {
+                orderService.completePaymentByOrderCode(orderCode);
+            } else if ("cancel".equals(normalizedStatus)) {
+                orderService.cancelPaymentByOrderCode(orderCode);
+            }
+
+            String normalizedPath = deepLinkPath.startsWith("/") ? deepLinkPath : "/" + deepLinkPath;
+            String deepLink = deepLinkScheme + "://" + deepLinkHost + normalizedPath + "?orderCode=" + orderCode + "&status=" + normalizedStatus;
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_HTML);
-            return new ResponseEntity<>(html, headers, HttpStatus.OK);
+            headers.setLocation(URI.create(deepLink));
+            return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing redirect");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
