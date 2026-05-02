@@ -54,9 +54,18 @@ public class EmailService {
             context.setVariable("tickets", order.getTickets());
 
             String htmlContent = templateEngine.process("order-confirmation", context);
-            String base64Content = Base64.getEncoder().encodeToString(pdfBytes);
             
-            sendEmailViaApi(to, "[Event Hub] Xác nhận đơn hàng #" + order.getId(), htmlContent, "Invoice_" + order.getId() + ".pdf", base64Content);
+            String base64Content = null;
+            String fileName = null;
+            if (pdfBytes != null && pdfBytes.length > 0) {
+                log.info("DEBUG: [EMAIL] Đã tạo PDF thành công, dung lượng: {} bytes", pdfBytes.length);
+                base64Content = Base64.getEncoder().encodeToString(pdfBytes);
+                fileName = "Invoice_" + order.getId() + ".pdf";
+            } else {
+                log.warn("DEBUG: [EMAIL] PDF rỗng, không thể đính kèm.");
+            }
+            
+            sendEmailViaApi(to, "[Event Hub] Xác nhận đơn hàng #" + order.getId(), htmlContent, fileName, base64Content);
         } catch (Exception e) {
             log.error("Lỗi chuẩn bị email xác nhận: {}", e.getMessage());
         }
@@ -75,10 +84,10 @@ public class EmailService {
             body.put("htmlContent", htmlContent);
 
             if (fileName != null && base64Content != null) {
-                body.put("attachments", List.of(Map.of(
-                        "name", fileName,
-                        "content", base64Content
-                )));
+                Map<String, String> attachment = new HashMap<>();
+                attachment.put("name", fileName);
+                attachment.put("content", base64Content);
+                body.put("attachment", List.of(attachment));
             }
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
