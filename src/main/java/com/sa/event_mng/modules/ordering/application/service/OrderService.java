@@ -195,6 +195,21 @@ public class OrderService {
     public void completePayment(String orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        processCompletion(order);
+    }
+
+    @Transactional
+    public void completePaymentByOrderCode(Long orderCode) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        processCompletion(order);
+    }
+
+    private void processCompletion(Order order) {
+        // Tránh xử lý lặp nếu đã PAID
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            return;
+        }
 
         try {
             order.setPaymentStatus(PaymentStatus.PAID);

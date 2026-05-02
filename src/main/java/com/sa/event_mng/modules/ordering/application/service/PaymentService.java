@@ -11,6 +11,10 @@ import lombok.experimental.FieldDefaults;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
 import vn.payos.type.Webhook;
@@ -73,20 +77,21 @@ public class PaymentService {
 
         // 3. Call PayOS API directly using RestTemplate
         org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        HttpHeaders headers = new HttpHeaders();
         headers.set("x-client-id", clientId);
         headers.set("x-api-key", apiKey);
-        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        org.springframework.http.HttpEntity<Map<String, Object>> entity = new org.springframework.http.HttpEntity<>(body, headers);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
         
         try {
-            org.springframework.http.ResponseEntity<Map> response = restTemplate.postForEntity(
-                "https://api-merchant.payos.vn/v2/payment-requests", entity, Map.class);
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
+                "https://api-merchant.payos.vn/v2/payment-requests", entity, (Class<Map<String, Object>>) (Class<?>) Map.class);
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-                Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
+                Map<String, Object> responseBody = response.getBody();
+                @SuppressWarnings("unchecked")                Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
                 return (String) data.get("checkoutUrl");
             }
         } catch (Exception e) {
