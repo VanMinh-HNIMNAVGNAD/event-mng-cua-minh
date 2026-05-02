@@ -252,8 +252,11 @@ public class OrderService {
             }
             orderRepository.save(order);
 
-            // Fetch order with all relations to avoid LazyInitializationException in Email/Pdf service
-            Order fullOrder = orderRepository.findByIdWithTickets(order.getId()).orElse(order);
+            // Fetch order with Customer to avoid LazyInitializationException
+            Order fullOrder = orderRepository.findByIdWithCustomer(order.getId()).orElse(order);
+            
+            // Đảm bảo nạp Tickets (do đang trong Transaction nên có thể gọi trực tiếp)
+            if (fullOrder.getTickets() != null) fullOrder.getTickets().size(); 
             
             if (fullOrder.getCustomer().getEmail() != null) {
                 try {

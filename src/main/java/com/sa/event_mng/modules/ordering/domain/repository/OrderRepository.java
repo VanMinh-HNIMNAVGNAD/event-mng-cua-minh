@@ -13,16 +13,8 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, String> {
     Page<Order> findByCustomerId(Long customerId, Pageable pageable);
     
-    @Query("SELECT o FROM Order o " +
-           "LEFT JOIN FETCH o.customer " +
-           "LEFT JOIN FETCH o.items i " +
-           "LEFT JOIN FETCH i.ticketType it " +
-           "LEFT JOIN FETCH it.event " +
-           "LEFT JOIN FETCH o.tickets t " +
-           "LEFT JOIN FETCH t.ticketType tt " +
-           "LEFT JOIN FETCH tt.event " +
-           "WHERE o.id = :id")
-    Optional<Order> findByIdWithTickets(@Param("id") String id);
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.customer WHERE o.id = :id")
+    Optional<Order> findByIdWithCustomer(@Param("id") String id);
 
     Optional<Order> findByOrderCode(Long orderCode);
 }
