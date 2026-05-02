@@ -213,10 +213,15 @@ public class OrderService {
     }
 
     private void processCompletion(Order order) {
+        log.info("DEBUG: [ORDER_PROCESS] Starting completion for OrderID: {}, OrderCode: {}", order.getId(), order.getOrderCode());
+        
         // Tránh xử lý lặp nếu đã PAID
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            log.warn("DEBUG: [ORDER_PROCESS] Order {} is ALREADY PAID. Skipping.", order.getOrderCode());
             return;
         }
+
+        log.info("DEBUG: [ORDER_PROCESS] Order status: {}, Customer Email: {}", order.getPaymentStatus(), order.getCustomer() != null ? order.getCustomer().getEmail() : "NULL");
 
         try {
             order.setPaymentStatus(PaymentStatus.PAID);

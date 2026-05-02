@@ -23,29 +23,27 @@ public class PaymentController {
 
     @PostMapping("/payos-webhook")
     public void handlePayOSWebhook(@RequestBody Map<String, Object> body) {
-        System.out.println("Webhook received: " + body);
         try {
-            String code = (String) body.get("code");
-            if ("00".equals(code)) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> data = (Map<String, Object>) body.get("data");
-                if (data != null) {
-                    Object orderCodeObj = data.get("orderCode");
-                    Long orderCode = null;
-                    if (orderCodeObj instanceof Integer) {
-                        orderCode = ((Integer) orderCodeObj).longValue();
-                    } else if (orderCodeObj instanceof Long) {
-                        orderCode = (Long) orderCodeObj;
-                    }
-                    
-                    if (orderCode != null) {
-                        System.out.println("Processing payment for orderCode: " + orderCode);
-                        orderService.completePaymentByOrderCode(orderCode);
-                    }
+            System.out.println("DEBUG: [WEBHOOK] Received call from PayOS. Body: " + body);
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+            
+            if (data != null) {
+                Object orderCodeObj = data.get("orderCode");
+                System.out.println("DEBUG: [WEBHOOK] OrderCode detected: " + orderCodeObj);
+                
+                if (orderCodeObj != null) {
+                    Long orderCode = Long.valueOf(orderCodeObj.toString());
+                    System.out.println("DEBUG: [WEBHOOK] Triggering OrderService.completePaymentByOrderCode for #" + orderCode);
+                    orderService.completePaymentByOrderCode(orderCode);
+                    System.out.println("DEBUG: [WEBHOOK] Process completed for #" + orderCode);
                 }
+            } else {
+                System.out.println("DEBUG: [WEBHOOK] Data is not a Map or missing.");
             }
         } catch (Exception e) {
-            System.err.println("Error processing webhook: " + e.getMessage());
+            System.err.println("CRITICAL ERROR: [WEBHOOK] Failed to process. Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
