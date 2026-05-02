@@ -35,7 +35,8 @@ public class EmailService {
             mailSender.send(email);
             System.out.println("Đã gửi email xác thực thành công tới: " + to);
         } catch (Exception e) {
-            System.err.println("KHÔNG THỂ GỬI EMAIL XÁC THỰC! (Do chưa cấu hình SMTP).");
+            e.printStackTrace();
+            System.err.println("KHÔNG THỂ GỬI EMAIL XÁC THỰC! (Lỗi: " + e.getMessage() + ")");
             System.err.println("LINK XÁC THỰC CỦA BẠN LÀ: " + verificationUrl);
         }
     }
@@ -58,7 +59,8 @@ public class EmailService {
             mailSender.send(email);
             System.out.println("Đã gửi email OTP thành công tới: " + to);
         } catch (Exception e) {
-            System.err.println("KHÔNG THỂ GỬI EMAIL OTP! (Do chưa cấu hình SMTP).");
+            e.printStackTrace();
+            System.err.println("KHÔNG THỂ GỬI EMAIL OTP! (Lỗi: " + e.getMessage() + ")");
             System.err.println("MÃ OTP CỦA BẠN LÀ: " + otp);
         }
     }
