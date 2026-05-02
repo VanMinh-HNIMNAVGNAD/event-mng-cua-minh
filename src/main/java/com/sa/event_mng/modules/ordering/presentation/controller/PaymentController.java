@@ -6,9 +6,15 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sa.event_mng.modules.ordering.application.service.OrderService;
@@ -24,6 +30,25 @@ public class PaymentController {
     @org.springframework.web.bind.annotation.GetMapping("/payos-webhook")
     public String validateWebhook() {
         return "Webhook is active!";
+    }
+
+    @GetMapping("/redirect")
+    public ResponseEntity<String> redirectToDeepLink(@RequestParam(name = "orderCode") Long orderCode,
+                                                     @RequestParam(name = "status", required = false, defaultValue = "success") String status) {
+        try {
+            String deepLink = "customer://payment-status?orderId=" + orderCode + "&status=" + status;
+
+            String html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'/>"
+                    + "<meta http-equiv='refresh' content='0;url=" + deepLink + "'/>"
+                    + "<script>window.location='" + deepLink + "';</script></head><body>"
+                    + "<p>If you are not redirected, <a href='" + deepLink + "'>click here</a>.</p></body></html>";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_HTML);
+            return new ResponseEntity<>(html, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing redirect");
+        }
     }
 
     @PostMapping("/payos-webhook")
