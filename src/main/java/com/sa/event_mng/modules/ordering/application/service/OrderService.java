@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -246,9 +247,17 @@ public class OrderService {
             }
             orderRepository.save(order);
 
-            if (order.getCustomer().getEmail() != null) {
-                byte[] pdfBytes = pdfService.generateOrderInvoice(order);
-                emailService.sendOrderConfirmationWithInvoice(order.getCustomer().getEmail(), order, pdfBytes);
+            // Fetch order with all relations to avoid LazyInitializationException in Email/Pdf service
+            Order fullOrder = orderRepository.findById(order.getId()).orElse(order);
+            
+            if (fullOrder.getCustomer().getEmail() != null) {
+                try {
+                    byte[] pdfBytes = pdfService.generateOrderInvoice(fullOrder);
+                    emailService.sendOrderConfirmationWithInvoice(fullOrder.getCustomer().getEmail(), fullOrder, pdfBytes);
+                } catch (Exception e) {
+                    log.error("Lỗi khi tạo PDF hoặc gửi mail: {}", e.getMessage());
+                    e.printStackTrace();
+                }
             }
         } catch (AppException ae) {
             throw ae;
