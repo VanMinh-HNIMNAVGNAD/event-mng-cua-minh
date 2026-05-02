@@ -44,14 +44,18 @@ public class PaymentService {
     @lombok.experimental.NonFinal
     String checksumKey;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    @lombok.experimental.NonFinal
+    String frontendUrl;
+
     public String createPayOSPaymentLink(Order order) throws Exception {
         String description = "Thanh toan #" + order.getOrderCode();
         if (description.length() > 25) {
             description = "TT don hang " + order.getOrderCode();
         }
         
-        String returnUrl = "http://localhost:5175/payment/success";
-        String cancelUrl = "http://localhost:5175/payment/cancel";
+        String returnUrl = frontendUrl + "/payment/success";
+        String cancelUrl = frontendUrl + "/payment/cancel";
 
         // 1. Prepare data for signature
         long amount = order.getTotalAmount().longValue();
