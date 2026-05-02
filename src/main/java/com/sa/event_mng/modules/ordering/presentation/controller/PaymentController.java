@@ -21,6 +21,11 @@ public class PaymentController {
 
     OrderService orderService;
 
+    @org.springframework.web.bind.annotation.GetMapping("/payos-webhook")
+    public String validateWebhook() {
+        return "Webhook is active!";
+    }
+
     @PostMapping("/payos-webhook")
     public void handlePayOSWebhook(@RequestBody Map<String, Object> body) {
         try {
