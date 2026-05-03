@@ -47,6 +47,10 @@ public class PaymentService {
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
     @lombok.experimental.NonFinal
     String frontendUrl;
+    
+    @org.springframework.beans.factory.annotation.Value("${app.backend.url}")
+    @lombok.experimental.NonFinal
+    String backendUrl;
 
     public String createPayOSPaymentLink(Order order) throws Exception {
         String description = "Thanh toan #" + order.getOrderCode();
@@ -54,12 +58,13 @@ public class PaymentService {
             description = "TT don hang " + order.getOrderCode();
         }
         
-        String returnUrl = frontendUrl + "/payment/success";
-        String cancelUrl = frontendUrl + "/payment/cancel";
-
         // 1. Prepare data for signature
         long amount = order.getTotalAmount().longValue();
         long orderCode = order.getOrderCode();
+
+        // Use backend redirect endpoints which will forward to app deep link (customer://...)
+        String returnUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=success";
+        String cancelUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=cancel";
         
         // PayOS requires fields in alphabetical order for signature
         String signatureData = "amount=" + amount +

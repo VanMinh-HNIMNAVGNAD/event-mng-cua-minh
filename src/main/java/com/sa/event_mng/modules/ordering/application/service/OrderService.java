@@ -212,6 +212,62 @@ public class OrderService {
         processCompletion(order);
     }
 
+    @Transactional
+    public void cancelPaymentByOrderCode(Long orderCode) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            return;
+        }
+
+        if (order.getPaymentStatus() == PaymentStatus.FAILED && order.getOrderStatus() == OrderStatus.CANCELLED) {
+            return;
+        }
+
+        User customer = order.getCustomer();
+        Cart cart = cartRepository.findByCustomerId(customer.getId())
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setCustomer(customer);
+                    newCart.setItems(new ArrayList<>());
+                    return cartRepository.save(newCart);
+                });
+
+        if (cart.getItems() == null) {
+            cart.setItems(new ArrayList<>());
+        }
+
+        for (OrderItem orderItem : order.getItems()) {
+            CartItem existingItem = null;
+            for (CartItem cartItem : cart.getItems()) {
+                if (cartItem.getTicketType().getId().equals(orderItem.getTicketType().getId())) {
+                    existingItem = cartItem;
+                    break;
+                }
+            }
+
+            if (existingItem != null) {
+                int newQuantity = existingItem.getQuantity() + orderItem.getQuantity();
+                existingItem.setQuantity(newQuantity);
+                existingItem.setSubtotal(existingItem.getUnitPrice().multiply(new BigDecimal(newQuantity)));
+            } else {
+                CartItem newItem = new CartItem();
+                newItem.setCart(cart);
+                newItem.setTicketType(orderItem.getTicketType());
+                newItem.setQuantity(orderItem.getQuantity());
+                newItem.setUnitPrice(orderItem.getUnitPrice());
+                newItem.setSubtotal(orderItem.getUnitPrice().multiply(new BigDecimal(orderItem.getQuantity())));
+                cart.getItems().add(newItem);
+            }
+        }
+
+        cartRepository.save(cart);
+        order.setPaymentStatus(PaymentStatus.FAILED);
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+    }
+
     private void processCompletion(Order order) {
         log.info("DEBUG: [ORDER_PROCESS] Starting completion for OrderID: {}, OrderCode: {}", order.getId(), order.getOrderCode());
         
