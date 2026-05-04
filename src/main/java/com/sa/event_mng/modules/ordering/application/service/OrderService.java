@@ -84,7 +84,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse checkout(PaymentMethod paymentMethod, String voucherCode) {
+    public OrderResponse checkout(PaymentMethod paymentMethod, String voucherCode, String platform) {
         User user = getCurrentUser();
         Cart cart = cartRepository.findByCustomerId(user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.CART_EMPTY));
@@ -93,11 +93,11 @@ public class OrderService {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
 
-        return createOrderFromItems(user, cart.getItems(), paymentMethod, cart, voucherCode);
+        return createOrderFromItems(user, cart.getItems(), paymentMethod, cart, voucherCode, platform);
     }
 
     @Transactional
-    public OrderResponse checkoutSelected(List<Long> itemIds, PaymentMethod paymentMethod, String voucherCode) {
+    public OrderResponse checkoutSelected(List<Long> itemIds, PaymentMethod paymentMethod, String voucherCode, String platform) {
         User user = getCurrentUser();
         Cart cart = cartRepository.findByCustomerId(user.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.CART_EMPTY));
@@ -113,10 +113,10 @@ public class OrderService {
             throw new AppException(ErrorCode.CART_EMPTY);
         }
 
-        return createOrderFromItems(user, selectedItems, paymentMethod, cart, voucherCode);
+        return createOrderFromItems(user, selectedItems, paymentMethod, cart, voucherCode, platform);
     }
 
-    private OrderResponse createOrderFromItems(User user, List<CartItem> items, PaymentMethod paymentMethod, Cart cart, String voucherCode) {
+    private OrderResponse createOrderFromItems(User user, List<CartItem> items, PaymentMethod paymentMethod, Cart cart, String voucherCode, String platform) {
         BigDecimal subTotal = BigDecimal.ZERO;
         for (CartItem item : items) {
             subTotal = subTotal.add(item.getSubtotal());
@@ -353,7 +353,7 @@ public class OrderService {
             // Nếu là PENDING và dùng PAYOS, ta tạo link mới để khách có thể tiếp tục thanh toán
             if (order.getPaymentStatus() == PaymentStatus.PENDING && order.getPaymentMethod() == PaymentMethod.PAYOS) {
                 try {
-                    response.setPaymentUrl(paymentService.createPayOSPaymentLink(order));
+                    response.setPaymentUrl(paymentService.createPayOSPaymentLink(order, "web"));
                 } catch (Exception e) {
                     log.error("Không thể tạo lại link thanh toán cho đơn hàng {}: {}", order.getOrderCode(), e.getMessage());
                 }

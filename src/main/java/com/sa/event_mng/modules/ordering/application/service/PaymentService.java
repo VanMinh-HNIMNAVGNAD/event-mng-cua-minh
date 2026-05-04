@@ -52,7 +52,7 @@ public class PaymentService {
     @lombok.experimental.NonFinal
     String backendUrl;
 
-    public String createPayOSPaymentLink(Order order) throws Exception {
+    public String createPayOSPaymentLink(Order order, String platform) throws Exception {
         String description = "Thanh toan #" + order.getOrderCode();
         if (description.length() > 25) {
             description = "TT don hang " + order.getOrderCode();
@@ -63,8 +63,8 @@ public class PaymentService {
         long orderCode = order.getOrderCode();
 
         // Use backend redirect endpoints which will forward to app deep link (customer://...)
-        String returnUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=success&platform=web";
-        String cancelUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=cancel&platform=web";
+        String returnUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=success&platform=" + platform;
+        String cancelUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=cancel&platform=" + platform;
         
         // PayOS requires fields in alphabetical order for signature
         String signatureData = "amount=" + amount +
