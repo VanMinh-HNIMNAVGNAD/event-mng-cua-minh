@@ -63,5 +63,35 @@
     "name": "application.security.jwt.expiration",
     "type": "java.lang.String",
     "description": "A description for 'application.security.jwt.expiration'"
+  },
+  {
+    "name": "app.payment.deep-link.path",
+    "type": "java.lang.String",
+    "description": "A description for 'app.payment.deep-link.path'"
+  },
+  {
+    "name": "app.payment.deep-link.host",
+    "type": "java.lang.String",
+    "description": "A description for 'app.payment.deep-link.host'"
+  },
+  {
+    "name": "app.payment.deep-link.scheme",
+    "type": "java.lang.String",
+    "description": "A description for 'app.payment.deep-link.scheme'"
+  },
+  {
+    "name": "cloudinary.api-key",
+    "type": "java.lang.String",
+    "description": "A description for 'cloudinary.api-key'"
+  },
+  {
+    "name": "cloudinary.cloud-name",
+    "type": "java.lang.String",
+    "description": "A description for 'cloudinary.cloud-name'"
+  },
+  {
+    "name": "cloudinary.api-secret",
+    "type": "java.lang.String",
+    "description": "A description for 'cloudinary.api-secret'"
   }
 ]}
