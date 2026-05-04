@@ -1,6 +1,6 @@
 package com.sa.event_mng.shared.presentation.controller;
 
-import com.sa.event_mng.shared.application.service.FileService;
+import com.sa.event_mng.shared.infrastructure.cloudinary.CloudinaryService;
 import com.sa.event_mng.shared.dto.ApiResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,12 @@ import org.springframework.web.multipart.MultipartFile;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FileController {
 
-    FileService fileService;
+    CloudinaryService cloudinaryService;
 
     @PostMapping("/upload")
     public ApiResponse<String> upload(@RequestParam("file") MultipartFile file) {
         return ApiResponse.<String>builder()
-                .result(fileService.saveFile(file))
+                .result(cloudinaryService.uploadFile(file))
                 .build();
     }
 }
