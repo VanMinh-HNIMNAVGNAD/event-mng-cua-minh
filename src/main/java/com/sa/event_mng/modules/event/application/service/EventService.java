@@ -106,14 +106,13 @@ public class EventService {
     public Page<EventResponse> getAllPublished(EventFilterRequest filter, PageRequest pageRequest) {
             
             List<EventStatus> activeStatuses = List.of(
-                            EventStatus.UPCOMING,
-                            EventStatus.OPENING,
-                            EventStatus.CLOSED
+                            EventStatus.OPENING
             );
             
             Specification<Event> spec = EventSpecification.filterEvents(
                 filter.getKeyword(), filter.getProvince(), filter.getMinPrice(), filter.getMaxPrice(),
-                filter.getStartDate(), filter.getEndDate(), activeStatuses, filter.getCategoryId()
+                filter.getStartDate(), filter.getEndDate(), activeStatuses, filter.getCategoryId(),
+                true
             );
 
             return eventRepository.findAll(spec, pageRequest).map(eventMapper::toEventResponse);
