@@ -124,6 +124,9 @@ public class OrderService {
             if (event.getStatus() != EventStatus.OPENING) {
                 throw new AppException(ErrorCode.EVENT_NOT_OPENING);
             }
+            if (item.getTicketType().getRemainingQuantity() < item.getQuantity()) {
+                throw new AppException(ErrorCode.TICKET_NOT_ENOUGH);
+            }
         }
 
         BigDecimal discountAmount = BigDecimal.ZERO;
@@ -345,7 +348,18 @@ public class OrderService {
     public Page<OrderResponse> getMyOrders(PageRequest pageRequest) {
         User user = getCurrentUser();
         Page<Order> orderPage = orderRepository.findByCustomerId(user.getId(), pageRequest);
-        return orderPage.map(orderMapper::toOrderResponse);
+        return orderPage.map(order -> {
+            OrderResponse response = orderMapper.toOrderResponse(order);
+            // Nếu là PENDING và dùng PAYOS, ta tạo link mới để khách có thể tiếp tục thanh toán
+            if (order.getPaymentStatus() == PaymentStatus.PENDING && order.getPaymentMethod() == PaymentMethod.PAYOS) {
+                try {
+                    response.setPaymentUrl(paymentService.createPayOSPaymentLink(order));
+                } catch (Exception e) {
+                    log.error("Không thể tạo lại link thanh toán cho đơn hàng {}: {}", order.getOrderCode(), e.getMessage());
+                }
+            }
+            return response;
+        });
     }
 
     @Transactional
