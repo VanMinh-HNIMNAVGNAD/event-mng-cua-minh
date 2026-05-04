@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.Map;
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -69,9 +70,23 @@ public class PaymentController {
             String normalizedStatus = normalizeStatus(status);
 
             if ("success".equals(normalizedStatus)) {
-                orderService.completePaymentByOrderCode(orderCode);
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        orderService.completePaymentByOrderCode(orderCode);
+                    } catch (Exception ex) {
+                        System.err.println("ERROR: async completePaymentByOrderCode failed for " + orderCode + ": " + ex.getMessage());
+                        ex.printStackTrace();
+                    }
+                });
             } else if ("cancel".equals(normalizedStatus)) {
-                orderService.cancelPaymentByOrderCode(orderCode);
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        orderService.cancelPaymentByOrderCode(orderCode);
+                    } catch (Exception ex) {
+                        System.err.println("ERROR: async cancelPaymentByOrderCode failed for " + orderCode + ": " + ex.getMessage());
+                        ex.printStackTrace();
+                    }
+                });
             }
 
             String finalUrl;
