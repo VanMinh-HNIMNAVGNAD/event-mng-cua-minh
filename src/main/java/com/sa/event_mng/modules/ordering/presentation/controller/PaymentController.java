@@ -57,9 +57,14 @@ public class PaymentController {
         return "Webhook is active!";
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    @lombok.experimental.NonFinal
+    String frontendUrl;
+
     @GetMapping("/redirect")
     public ResponseEntity<Void> redirectToDeepLink(@RequestParam(name = "orderCode") Long orderCode,
-                                                   @RequestParam(name = "status", required = false, defaultValue = "success") String status) {
+                                                   @RequestParam(name = "status", required = false, defaultValue = "success") String status,
+                                                   @RequestParam(name = "platform", required = false, defaultValue = "mobile") String platform) {
         try {
             String normalizedStatus = normalizeStatus(status);
 
@@ -69,11 +74,19 @@ public class PaymentController {
                 orderService.cancelPaymentByOrderCode(orderCode);
             }
 
-            String normalizedPath = deepLinkPath.startsWith("/") ? deepLinkPath : "/" + deepLinkPath;
-            String deepLink = deepLinkScheme + "://" + deepLinkHost + normalizedPath + "?orderCode=" + orderCode + "&status=" + normalizedStatus;
+            String finalUrl;
+            if ("web".equalsIgnoreCase(platform)) {
+                // Redirect back to Web Frontend
+                String subPath = "success".equals(normalizedStatus) ? "/payment/success" : "/payment/cancel";
+                finalUrl = frontendUrl + subPath + "?orderCode=" + orderCode;
+            } else {
+                // Redirect to Mobile Deep Link
+                String normalizedPath = deepLinkPath.startsWith("/") ? deepLinkPath : "/" + deepLinkPath;
+                finalUrl = deepLinkScheme + "://" + deepLinkHost + normalizedPath + "?orderCode=" + orderCode + "&status=" + normalizedStatus;
+            }
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create(deepLink));
+            headers.setLocation(URI.create(finalUrl));
             return new ResponseEntity<>(headers, HttpStatus.SEE_OTHER);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

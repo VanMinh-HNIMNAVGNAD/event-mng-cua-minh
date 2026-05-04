@@ -184,7 +184,7 @@ public class OrderService {
 
         if (paymentMethod == PaymentMethod.PAYOS) {
             try {
-                String paymentUrl = paymentService.createPayOSPaymentLink(savedOrder);
+                String paymentUrl = paymentService.createPayOSPaymentLink(savedOrder, platform);
                 response.setPaymentUrl(paymentUrl);
             } catch (Exception e) {
                 e.printStackTrace();

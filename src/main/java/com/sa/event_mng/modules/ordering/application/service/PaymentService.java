@@ -63,8 +63,8 @@ public class PaymentService {
         long orderCode = order.getOrderCode();
 
         // Use backend redirect endpoints which will forward to app deep link (customer://...)
-        String returnUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=success";
-        String cancelUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=cancel";
+        String returnUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=success&platform=web";
+        String cancelUrl = backendUrl + "/api/v1/payments/redirect?orderCode=" + orderCode + "&status=cancel&platform=web";
         
         // PayOS requires fields in alphabetical order for signature
         String signatureData = "amount=" + amount +

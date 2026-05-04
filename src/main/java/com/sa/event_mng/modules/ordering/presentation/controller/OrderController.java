@@ -27,9 +27,10 @@ public class OrderController {
     @Operation(summary = "Thanh toán toàn bộ giỏ hàng")
     public ApiResponse<OrderResponse> checkout(
             @RequestParam PaymentMethod paymentMethod,
-            @RequestParam(required = false) String voucherCode) {
+            @RequestParam(required = false) String voucherCode,
+            @RequestParam(defaultValue = "web") String platform) {
         return ApiResponse.<OrderResponse>builder()
-                .result(orderService.checkout(paymentMethod, voucherCode))
+                .result(orderService.checkout(paymentMethod, voucherCode, platform))
                 .build();
     }
 
@@ -38,9 +39,10 @@ public class OrderController {
     public ApiResponse<OrderResponse> checkoutSelected(
             @RequestBody java.util.List<Long> itemIds, 
             @RequestParam PaymentMethod paymentMethod,
-            @RequestParam(required = false) String voucherCode) {
+            @RequestParam(required = false) String voucherCode,
+            @RequestParam(defaultValue = "web") String platform) {
         return ApiResponse.<OrderResponse>builder()
-                .result(orderService.checkoutSelected(itemIds, paymentMethod, voucherCode))
+                .result(orderService.checkoutSelected(itemIds, paymentMethod, voucherCode, platform))
                 .build();
     }
 
