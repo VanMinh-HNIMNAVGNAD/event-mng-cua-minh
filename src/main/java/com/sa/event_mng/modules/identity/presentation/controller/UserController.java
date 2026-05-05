@@ -1,6 +1,7 @@
 package com.sa.event_mng.modules.identity.presentation.controller;
 
 import com.sa.event_mng.modules.identity.application.dto.request.UserUpdateRequest;
+import com.sa.event_mng.modules.identity.application.dto.response.OrganizerResponse;
 import com.sa.event_mng.modules.identity.application.dto.response.UserResponse;
 import com.sa.event_mng.modules.identity.application.service.UserService;
 import com.sa.event_mng.shared.dto.ApiResponse;
@@ -85,6 +86,14 @@ public class UserController {
         PageRequest pageRequest = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
         return ApiResponse.<Page<UserResponse>>builder()
                 .result(userService.getMyStaff(search, pageRequest))
+                .build();
+    }
+
+    @Operation(summary = "[STAFF] Xem thông tin organizer của mình")
+    @GetMapping("/staff/organizer/{organizerId}")
+    public ApiResponse<OrganizerResponse> getMyOrganizer(@PathVariable Long organizerId) {
+        return ApiResponse.<OrganizerResponse>builder()
+                .result(userService.getMyOrganizer(organizerId))
                 .build();
     }
 

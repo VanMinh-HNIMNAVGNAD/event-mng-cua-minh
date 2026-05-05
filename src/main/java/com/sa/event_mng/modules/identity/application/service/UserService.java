@@ -2,6 +2,7 @@ package com.sa.event_mng.modules.identity.application.service;
 
 import com.sa.event_mng.modules.identity.application.dto.request.UserCreateRequest;
 import com.sa.event_mng.modules.identity.application.dto.request.UserUpdateRequest;
+import com.sa.event_mng.modules.identity.application.dto.response.OrganizerResponse;
 import com.sa.event_mng.modules.identity.application.dto.response.UserResponse;
 import com.sa.event_mng.shared.exception.AppException;
 import com.sa.event_mng.shared.exception.ErrorCode;
@@ -131,6 +132,26 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         return userRepository.findByOrganizer_IdAndRoles_Name(organizer.getId(), "STAFF", pageRequest)
                 .map(userMapper::toUserResponse);
+    }
+
+    @PreAuthorize("hasRole('STAFF')")
+    public OrganizerResponse getMyOrganizer(Long organizerId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User staff = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (staff.getOrganizer() == null || !staff.getOrganizer().getId().equals(organizerId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        User organizer = userRepository.findByIdAndEnabledTrue(organizerId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        return OrganizerResponse.builder()
+                .id(organizer.getId())
+                .fullName(organizer.getFullName())
+                .email(organizer.getEmail())
+                .build();
     }
 
     @PreAuthorize("hasRole('ORGANIZER')")
