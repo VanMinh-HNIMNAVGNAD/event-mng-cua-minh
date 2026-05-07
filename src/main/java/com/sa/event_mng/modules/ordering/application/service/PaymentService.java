@@ -16,6 +16,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import vn.payos.PayOS;
 import vn.payos.type.Webhook;
 
@@ -85,7 +87,7 @@ public class PaymentService {
         body.put("signature", signature);
 
         // 3. Call PayOS API directly using RestTemplate
-        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set("x-client-id", clientId);
         headers.set("x-api-key", apiKey);

@@ -5,8 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.thymeleaf.context.Context;
 
+import com.sa.event_mng.modules.ordering.domain.model.Order;
+
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -44,13 +49,13 @@ public class EmailService {
 
         sendEmailViaApi(to, "[Event Manager] Mã xác thực OTP", htmlContent, null, null);
     }
-
-    public void sendOrderConfirmationWithInvoice(String to, com.sa.event_mng.modules.ordering.domain.model.Order order, byte[] pdfBytes) {
+//thymeleaf
+    public void sendOrderConfirmationWithInvoice(String to, Order order, byte[] pdfBytes) {
         try {
-            org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+            Context context = new Context();
             context.setVariable("orderId", order.getId());
             context.setVariable("totalAmount", String.format("%,.0f", order.getTotalAmount().doubleValue()));
-            context.setVariable("orderDate", order.getOrderDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            context.setVariable("orderDate", order.getOrderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
             context.setVariable("tickets", order.getTickets());
 
             String htmlContent = templateEngine.process("order-confirmation", context);
@@ -99,7 +104,7 @@ public class EmailService {
             } else {
                 log.error("Lỗi gửi email qua API Brevo. Mã lỗi: {}. Chi tiết: {}", response.getStatusCode(), response.getBody());
             }
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
+        } catch (HttpClientErrorException e) {
             log.error("Lỗi HTTP từ Brevo API: {}. Nội dung: {}", e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("KHÔNG THỂ GỬI EMAIL QUA API! Lỗi: {}", e.getMessage());

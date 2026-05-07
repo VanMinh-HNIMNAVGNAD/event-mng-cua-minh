@@ -13,6 +13,7 @@ import com.sa.event_mng.modules.ordering.domain.model.OrderItem;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 
 @Service
 public class PdfService {
@@ -28,13 +29,12 @@ public class PdfService {
             
             BaseFont baseFont;
             try {
-                // Thử tìm font Arial trên Windows hoặc Linux
                 String fontPath = "C:/Windows/Fonts/Arial.ttf";
-                if (!new java.io.File(fontPath).exists()) {
+                if (!new File(fontPath).exists()) {
                     fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"; // Linux
                 }
-                if (!new java.io.File(fontPath).exists()) {
-                    // Nếu không thấy font nào, dùng font mặc định (không hỗ trợ tiếng Việt tốt nhưng không gây crash)
+                if (!new File(fontPath).exists()) {
+                    // Nếu không thấy font nào, dùng font mặc định (không hỗ trợ tiếng Việt tốt nhưng không crash)
                     baseFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
                 } else {
                     baseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
