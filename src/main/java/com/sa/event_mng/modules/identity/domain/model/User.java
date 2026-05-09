@@ -13,6 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = true)
+// Entity đại diện cho người dùng và ban tổ chức trong hệ thống
 public class User extends BaseEntity {
 
     @Id
