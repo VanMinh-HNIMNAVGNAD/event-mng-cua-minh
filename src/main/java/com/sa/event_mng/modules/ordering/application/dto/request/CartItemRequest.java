@@ -12,6 +12,6 @@ public class CartItemRequest {
     @NotNull(message = "UNCATEGORIZED_EXCEPTION")
     private Long ticketTypeId;
 
-    @Min(value = 1, message = "UNCATEGORIZED_EXCEPTION")
+    @Min(value = 1, message = "INVALID_QUANTITY")
     private Integer quantity;
 }

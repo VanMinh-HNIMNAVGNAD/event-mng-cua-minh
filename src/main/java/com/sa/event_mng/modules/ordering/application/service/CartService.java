@@ -45,7 +45,7 @@ public class CartService {
                 user.getUsername(), request.getTicketTypeId(), request.getQuantity());
 
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            throw new AppException(ErrorCode.INVALID_QUANTITY);
         }
 
         Cart cart = cartRepository.findByCustomerId(user.getId())
@@ -64,7 +64,7 @@ public class CartService {
             throw new AppException(ErrorCode.EVENT_NOT_OPENING);
         }
 
-        // check stock
+        // check cart
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getTicketType().getId().equals(request.getTicketTypeId()))
                 .findFirst();
