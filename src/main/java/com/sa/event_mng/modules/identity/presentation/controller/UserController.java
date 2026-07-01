@@ -20,7 +20,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "Người dùng", description = "Hồ sơ và quản lý người dùng")
+@Tag(name = "user", description = "Hồ sơ và quản lý người dùng")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
 

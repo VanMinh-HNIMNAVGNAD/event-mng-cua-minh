@@ -22,8 +22,8 @@ public class TokenCleanupService {
     @Scheduled(fixedRate = 7200000)
     @Transactional
     public void cleanupExpiredTokens() {
-        log.info("CLEANUP: Starting to clear expired tokens from blacklist...");
+        log.info("CLEANUP: Bắt đầu xóa các token đã hết hạn khỏi danh sách đen...");
         invalidatedTokenRepository.deleteByExpiryTimeBefore(new Date());
-        log.info("CLEANUP: Expired tokens cleared.");
+        log.info("CLEANUP: Các mã thông báo hết hạn đã được xóa.");
     }
 }
