@@ -22,4 +22,4 @@ jobs:
         run: |
           docker rm -f event-mng || true
           docker build -t event-mng .
-          docker run -d --name event-mng --env-file .env --add-host=host.docker.internal:host-gateway -p 8080:8080 event-mng
+          docker run -d --name event-mng --env-file .env --add-host=host.docker.internal:host-gateway -p 8081:80  80 event-mng
