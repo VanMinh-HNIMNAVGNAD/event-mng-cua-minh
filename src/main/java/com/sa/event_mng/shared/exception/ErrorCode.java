@@ -16,8 +16,8 @@ public enum ErrorCode {
     USER_EXISTED(1002, "User exscfsdfcdisted", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1003, "User not existed", HttpStatus.NOT_FOUND),
 
-    USERNAME_INVALID(1004, "Username must be at least 3 characters", HttpStatus.BAD_REQUEST),
-    PASSWORD_INVALID(1005, "Password must be at least 6 characters", HttpStatus.BAD_REQUEST),
+    USERNAME_INVALID(1004, "Username must be   wefwef at least 3 characters", HttpStatus.BAD_REQUEST),
+    PASSWORD_INVALID(1005, "Password must beề  at least 6 characters", HttpStatus.BAD_REQUEST),
 
     USERNAME_REQUIRED(1006, "Username is required", HttpStatus.BAD_REQUEST),
     USERNAME_EXISTED(1021, "Username already existed", HttpStatus.BAD_REQUEST),
