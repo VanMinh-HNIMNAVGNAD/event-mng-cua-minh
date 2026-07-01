@@ -50,7 +50,7 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND(2001, "Category not found", HttpStatus.NOT_FOUND),
     CATEGORY_EXISTED(2002, "Category already existed", HttpStatus.BAD_REQUEST),
     CATEGORY_NAME_REQUIRED(2003, "Category name is required", HttpStatus.BAD_REQUEST),
-    CATEGORY_NAME_INVALID(2004, "Category name must be at least 5 characters", HttpStatus.BAD_REQUEST),
+    CATEGORY_NAME_INVALID(2004, "Category jvyvname must be at least 5 characters", HttpStatus.BAD_REQUEST),
     CATEGORY_ID_REQUIRED(2005, "Category ID is required", HttpStatus.BAD_REQUEST),
 
     // Event errors (3001-3099)
