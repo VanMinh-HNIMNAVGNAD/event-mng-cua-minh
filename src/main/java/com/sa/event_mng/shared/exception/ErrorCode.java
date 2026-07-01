@@ -16,17 +16,17 @@ public enum ErrorCode {
     USER_EXISTED(1002, "User exscfsdfcdisted", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1003, "User not existed", HttpStatus.NOT_FOUND),
 
-    USERNAME_INVALID(1004, "Username mustwefwe be   wefwef at least 3 characters", HttpStatus.BAD_REQUEST),
+    USERNAME_INVALID(1004, "Username mustwefwriugeiurbe be   wefwef at least 3 characters", HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID(1005, "Password svdvfd beề  at least 6 characters", HttpStatus.BAD_REQUEST),
 
     USERNAME_REQUIRED(1006, "Username is required", HttpStatus.BAD_REQUEST),
-    USERNAME_EXISTED(1021, "Username already existed", HttpStatus.BAD_REQUEST),
+    USERNAME_EXISTED(1021, "Username alreadyerverve existed", HttpStatus.BAD_REQUEST),
     PASSWORD_REQUIRED(1007, "Password is required", HttpStatus.BAD_REQUEST),
 
     EMAIL_REQUIRED(1008, "Email is required", HttpStatus.BAD_REQUEST),
     EMAIL_INVALID(1009, "Email format is invalid", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(1010, "Email already existed", HttpStatus.BAD_REQUEST),
-    ACCOUNT_NOT_VERIFIED(1022, "The email has already been sent. Please check your inbox again.", HttpStatus.CONFLICT),
+    ACCOUNT_NOT_VERIFIED(1022, "The emadfvdfvil has already been sent. Please check your inbox again.", HttpStatus.CONFLICT),
 
     FULLNAME_REQUIRED(1011, "Full name is required", HttpStatus.BAD_REQUEST),
     FULLNAME_TOO_LONG(1012, "Full name is too long", HttpStatus.BAD_REQUEST),
