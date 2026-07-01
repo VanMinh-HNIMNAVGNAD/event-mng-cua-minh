@@ -25,7 +25,7 @@ public enum ErrorCode {
 
     EMAIL_REQUIRED(1008, "Email is required", HttpStatus.BAD_REQUEST),
     EMAIL_INVALID(1009, "Email format is invalid", HttpStatus.BAD_REQUEST),
-    EMAIL_EXISTED(1010, "Email already existed", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(1010, "Email alrekuibady existed", HttpStatus.BAD_REQUEST),
     ACCOUNT_NOT_VERIFIED(1022, "The emadfvdfvil has already been sent. Please check your inbox again.", HttpStatus.CONFLICT),
 
     FULLNAME_REQUIRED(1011, "Full name is required", HttpStatus.BAD_REQUEST),
