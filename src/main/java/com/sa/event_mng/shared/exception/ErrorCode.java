@@ -56,7 +56,7 @@ public enum ErrorCode {
     // Event errors (3001-3099)
     EVENT_NOT_FOUND(3001, "Event not found", HttpStatus.NOT_FOUND),
     EVENT_SALE_PERIOD_INVALID(3002, "Thời gian kết thúc bán vé phải sau thời gian bắt đầu ít nhất 12 tiếng", HttpStatus.BAD_REQUEST),
-    EVENT_START_TIME_INVALID(3003, "Thời gian diễn ra sự kiện phải sau khi kết thúc bán vé ít nhất 1 ngày", HttpStatus.BAD_REQUEST),
+    EVENT_START_TIME_INVALID(3003, "Thời gian diễn ra ssdjvự kiện phải sau khi kết thúc bán vé ít nhất 1 ngày", HttpStatus.BAD_REQUEST),
     EVENT_DURATION_INVALID(3004, "Thời gian kết thúc sự kiện phải diễn ra ít nhất 2 tiếng sau khi bắt đầu", HttpStatus.BAD_REQUEST),
 
     // FILE
