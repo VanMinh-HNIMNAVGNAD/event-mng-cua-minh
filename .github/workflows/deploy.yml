@@ -1,0 +1,25 @@
+name: Deploy Real Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Tao file moi truong (.env)
+        run: |
+          echo "MYSQL_URL=jdbc:mysql://host.docker.internal:3306/event_mng?serverTimezone=Asia/Ho_Chi_Minh&createDatabaseIfNotExist=true" > .env
+          echo "MYSQLUSER=event_mng" >> .env
+          echo "MYSQLPASS=123456" >> .env
+
+      - name: Build & Run Docker Container
+        run: |
+          docker rm -f event-mng || true
+          docker build -t event-mng .
+          docker run -d --name event-mng --env-file .env --add-host=host.docker.internal:host-gateway -p 8080:8080 event-mng
